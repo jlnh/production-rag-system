@@ -323,7 +323,7 @@ class RetrievalEvaluator:
         results_b = self.evaluate_system(system_b, top_k_values)
 
         # Calculate improvements
-        comparison = {
+        comparison: Dict[str, Any] = {
             "system_a": {"name": system_a_name, "metrics": results_a},
             "system_b": {"name": system_b_name, "metrics": results_b},
             "improvements": {},

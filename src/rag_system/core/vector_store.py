@@ -109,12 +109,12 @@ class VectorStore(VectorStoreBase):
         try:
             import weaviate
 
-            return weaviate.Client(
-                url=self.config.get("url", "http://localhost:8080"),
-                auth_client_secret=self.config.get("auth_config"),
+            # Weaviate 4.x uses connect_to_local() instead of Client()
+            return weaviate.connect_to_local(  # type: ignore[attr-defined]
+                host=self.config.get("url", "http://localhost:8080")
             )
 
-        except ImportError:
+        except (ImportError, AttributeError):
             raise ImportError(
                 "Weaviate library required. Install with: pip install weaviate-client"
             )

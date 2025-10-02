@@ -364,7 +364,7 @@ class ConfigManager:
 
     def reload_config(self) -> RAGConfig:
         """Reload configuration from sources."""
-        self._config: Optional[RAGConfig] = None
+        self._config = None
         return self.load_config()
 
     def to_dict(self) -> Dict[str, Any]:

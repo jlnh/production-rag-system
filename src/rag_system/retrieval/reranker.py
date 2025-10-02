@@ -297,7 +297,7 @@ class ReRanker:
             f"Benchmarking re-ranker with {len(test_queries)} queries and {len(test_documents)} documents"
         )
 
-        total_time = 0
+        total_time = 0.0
         total_pairs = 0
 
         for query in test_queries:
@@ -312,8 +312,8 @@ class ReRanker:
         return {
             "avg_time_per_query": avg_time_per_query,
             "avg_time_per_pair": avg_time_per_pair,
-            "total_queries": len(test_queries),
-            "total_documents": len(test_documents),
+            "total_queries": float(len(test_queries)),
+            "total_documents": float(len(test_documents)),
             "model_name": self.model_name,
         }
 

@@ -266,7 +266,7 @@ class PerformanceMonitor:
             return {"error": "No measurements available"}
 
         # Group measurements by metric
-        metrics = {}
+        metrics: Dict[str, List[float]] = {}
         for measurement in self._measurements:
             metric_name = measurement["metric"]
             if metric_name not in metrics:
@@ -274,7 +274,7 @@ class PerformanceMonitor:
             metrics[metric_name].append(measurement["value"])
 
         # Calculate statistics for each metric
-        summary = {}
+        summary: Dict[str, Any] = {}
         for metric_name, values in metrics.items():
             if values:
                 summary[metric_name] = {

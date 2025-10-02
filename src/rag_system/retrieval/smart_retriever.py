@@ -356,12 +356,13 @@ class SmartRetriever(HybridRetriever):
 
         if domain in domain_configs:
             config = domain_configs[domain]
-            self.vector_weight = config["vector_weight"]
-            self.keyword_weight = config["keyword_weight"]
+            self.vector_weight = float(config["vector_weight"])
+            self.keyword_weight = float(config["keyword_weight"])
 
             # Add domain-specific indicators
             additional_indicators = config.get("additional_technical_indicators", [])
-            self.technical_indicators.extend(additional_indicators)
+            if isinstance(additional_indicators, list):
+                self.technical_indicators.extend(additional_indicators)
 
             logger.info(
                 f"Optimized for {domain} domain: vector={self.vector_weight}, keyword={self.keyword_weight}"

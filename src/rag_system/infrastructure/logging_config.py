@@ -351,7 +351,7 @@ def get_logger_with_context(
                 name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
             )
 
-        logger.makeRecord = makeRecord
+        logger.makeRecord = makeRecord  # type: ignore[method-assign]
 
     return logger
 
