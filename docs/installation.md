@@ -162,14 +162,26 @@ Download and install from: https://redis.io/download
 ### Vector Database Setup
 
 #### Pinecone
+
+**Note:** Use Pinecone v5.0+ (the new official package, not `pinecone-client`)
+
 ```bash
-# Install Pinecone client
-pip install pinecone-client
+# Pinecone is included in requirements.txt
+pip install "pinecone>=5.0.0"
 
 # Set environment variables
 export PINECONE_API_KEY="your-pinecone-api-key"
-export PINECONE_ENVIRONMENT="your-pinecone-environment"
+export PINECONE_CLOUD="aws"  # or gcp, azure
+export PINECONE_REGION="us-east-1"  # your preferred region
 ```
+
+**Getting Your Pinecone API Key:**
+
+1. Go to [https://pinecone.io](https://pinecone.io) and log in (or sign up)
+2. Select your project in the Pinecone console
+3. Navigate to the **API Keys** tab
+4. Click **Create API Key**, name it, and set permissions
+5. Copy and save the key securely (you won't see it again)
 
 #### Weaviate
 ```bash
@@ -205,9 +217,10 @@ cp .env.example .env
 OPENAI_API_KEY=your-openai-api-key-here
 
 # Vector Store Configuration (Choose one)
-# For Pinecone:
+# For Pinecone (v5.0+):
 PINECONE_API_KEY=your-pinecone-api-key
-PINECONE_ENVIRONMENT=your-pinecone-environment
+PINECONE_CLOUD=aws  # or gcp, azure
+PINECONE_REGION=us-east-1  # your region
 VECTOR_STORE_BACKEND=pinecone
 
 # For Weaviate:
@@ -364,15 +377,12 @@ print(openai.Model.list())
 
 #### Vector Store Connection
 ```bash
-# Test Pinecone
+# Test Pinecone (v5.0+)
 python -c "
-import pinecone
+from pinecone import Pinecone
 import os
-pinecone.init(
-    api_key=os.getenv('PINECONE_API_KEY'),
-    environment=os.getenv('PINECONE_ENVIRONMENT')
-)
-print(pinecone.list_indexes())
+pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+print([idx.name for idx in pc.list_indexes()])
 "
 ```
 

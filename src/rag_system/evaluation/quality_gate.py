@@ -200,7 +200,7 @@ class QualityGate:
                 execution_time=execution_time
             )
 
-    def run_performance_tests(self, rag_service) -> QualityTestResult:
+    async def run_performance_tests(self, rag_service) -> QualityTestResult:
         """
         Run performance tests.
 
@@ -230,7 +230,7 @@ class QualityGate:
             for query in test_queries:
                 query_start = time.time()
                 try:
-                    result = rag_service.process_query(query, top_k=5)
+                    result = await rag_service.process_query(query, top_k=5)
                     response_time = time.time() - query_start
                     response_times.append(response_time)
                     successful_queries += 1
@@ -290,7 +290,7 @@ class QualityGate:
                 execution_time=execution_time
             )
 
-    def run_health_tests(self, rag_service) -> QualityTestResult:
+    async def run_health_tests(self, rag_service) -> QualityTestResult:
         """
         Run system health tests.
 
@@ -306,7 +306,7 @@ class QualityGate:
             logger.info("Running health tests...")
 
             # Check system health
-            health_result = rag_service.health_check()
+            health_result = await rag_service.health_check()
 
             # Verify all components are healthy
             overall_healthy = health_result.get('healthy', False)

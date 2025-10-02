@@ -9,7 +9,7 @@ License: MIT
 
 from fastapi import HTTPException, Depends, Header, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 import os
 import time
@@ -138,7 +138,7 @@ class ProductionRAGService:
                 raise ValueError("top_k must be between 1 and 20")
 
             # Process query
-            with query_duration_tracker.time():
+            with query_duration_tracker():
                 result = self.query_processor.query(
                     question=question,
                     top_k=top_k,

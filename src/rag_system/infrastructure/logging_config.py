@@ -165,7 +165,7 @@ def setup_standard_logging(
             'format': '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s - %(message)s'
         },
         'json': {
-            '()': 'src.rag_system.infrastructure.logging_config.JSONFormatter'
+            '()': 'rag_system.infrastructure.logging_config.JSONFormatter'
         }
     }
 
@@ -408,6 +408,5 @@ def setup_audit_logging(audit_log_file: str = "audit.log") -> logging.Logger:
     return audit_logger
 
 
-# Initialize logging on module import
-if not logging.getLogger().handlers:
-    setup_logging()
+# Don't auto-initialize - let applications call setup_logging() explicitly
+# This avoids circular import issues

@@ -95,16 +95,15 @@ class VectorStore(VectorStoreBase):
     def _create_pinecone_client(self):
         """Create Pinecone client."""
         try:
-            import pinecone
+            from pinecone import Pinecone
 
-            pinecone.init(
-                api_key=self.config.get("api_key"),
-                environment=self.config.get("environment", "us-west1-gcp")
+            pc = Pinecone(
+                api_key=self.config.get("api_key")
             )
-            return pinecone
+            return pc
 
         except ImportError:
-            raise ImportError("Pinecone library required. Install with: pip install pinecone-client")
+            raise ImportError("Pinecone library required. Install with: pip install pinecone")
 
     def _create_weaviate_client(self):
         """Create Weaviate client."""
@@ -142,11 +141,19 @@ class VectorStore(VectorStoreBase):
 
     def _get_pinecone_index(self, index_name: str):
         """Get or create Pinecone index."""
-        if index_name not in self.client.list_indexes():
+        from pinecone import ServerlessSpec
+
+        existing_indexes = [idx.name for idx in self.client.list_indexes()]
+
+        if index_name not in existing_indexes:
             self.client.create_index(
                 name=index_name,
                 dimension=self.config.get("dimension", 1536),
-                metric=self.config.get("metric", "cosine")
+                metric=self.config.get("metric", "cosine"),
+                spec=ServerlessSpec(
+                    cloud=self.config.get("cloud", "aws"),
+                    region=self.config.get("region", "us-east-1")
+                )
             )
             logger.info(f"Created Pinecone index: {index_name}")
 

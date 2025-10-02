@@ -13,7 +13,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 def read_requirements(filename):
     """Read requirements from file."""
     with open(filename, "r", encoding="utf-8") as f:
-        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
+        return [
+            line.strip()
+            for line in f
+            if line.strip()
+            and not line.startswith("#")
+            and not line.startswith("-r")
+        ]
 
 # Base requirements
 install_requires = read_requirements("requirements.txt")

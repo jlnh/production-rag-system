@@ -191,8 +191,8 @@ async def test_production_service():
         print("   🔍 Running quality tests...")
 
         # Run health tests only (retrieval tests need actual data)
-        health_result = quality_gate.run_health_tests(rag_service)
-        performance_result = quality_gate.run_performance_tests(rag_service)
+        health_result = await quality_gate.run_health_tests(rag_service)
+        performance_result = await quality_gate.run_performance_tests(rag_service)
 
         print(f"   🏥 Health tests: {'✅ PASSED' if health_result.passed else '❌ FAILED'}")
         print(f"   ⚡ Performance tests: {'✅ PASSED' if performance_result.passed else '❌ FAILED'}")
