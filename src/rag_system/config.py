@@ -15,6 +15,7 @@ import logging
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     # dotenv is optional, environment variables can still be set manually
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EmbeddingConfig:
     """Configuration for embedding generation."""
+
     model: str = "text-embedding-3-small"
     batch_size: int = 100
     max_retries: int = 3
@@ -36,6 +38,7 @@ class EmbeddingConfig:
 @dataclass
 class VectorStoreConfig:
     """Configuration for vector store."""
+
     backend: str = "pinecone"
     index_name: str = "rag-documents"
     metric: str = "cosine"
@@ -56,6 +59,7 @@ class VectorStoreConfig:
 @dataclass
 class LLMConfig:
     """Configuration for language model."""
+
     model: str = "gpt-4.1"
     max_tokens: int = 1000
     temperature: float = 0.1
@@ -66,6 +70,7 @@ class LLMConfig:
 @dataclass
 class CacheConfig:
     """Configuration for caching."""
+
     redis_url: str = "redis://localhost:6379"
     default_ttl: int = 3600
     max_cache_size: int = 10000
@@ -75,6 +80,7 @@ class CacheConfig:
 @dataclass
 class RateLimitConfig:
     """Configuration for rate limiting."""
+
     max_requests: int = 100
     window_seconds: int = 3600
     enabled: bool = True
@@ -83,6 +89,7 @@ class RateLimitConfig:
 @dataclass
 class LoggingConfig:
     """Configuration for logging."""
+
     level: str = "INFO"
     format_type: str = "structured"
     log_file: Optional[str] = None
@@ -93,6 +100,7 @@ class LoggingConfig:
 @dataclass
 class SecurityConfig:
     """Configuration for security."""
+
     api_keys: List[str] = field(default_factory=list)
     cors_origins: List[str] = field(default_factory=lambda: ["*"])
     cors_methods: List[str] = field(default_factory=lambda: ["GET", "POST"])
@@ -103,19 +111,19 @@ class SecurityConfig:
 @dataclass
 class MonitoringConfig:
     """Configuration for monitoring."""
+
     prometheus_enabled: bool = True
     metrics_path: str = "/metrics"
     health_check_interval: int = 30
-    alert_thresholds: Dict[str, float] = field(default_factory=lambda: {
-        'query_duration': 5.0,
-        'error_rate': 0.05,
-        'cache_hit_rate': 0.6
-    })
+    alert_thresholds: Dict[str, float] = field(
+        default_factory=lambda: {"query_duration": 5.0, "error_rate": 0.05, "cache_hit_rate": 0.6}
+    )
 
 
 @dataclass
 class RAGConfig:
     """Main RAG system configuration."""
+
     # Environment
     environment: str = "development"
     debug: bool = True
@@ -189,7 +197,7 @@ class ConfigManager:
         try:
             import yaml
 
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 file_config = yaml.safe_load(f)
 
             # Update config with file values
@@ -217,13 +225,19 @@ class ConfigManager:
 
         # Embedding
         config.embedding.model = os.getenv("EMBEDDING_MODEL", config.embedding.model)
-        config.embedding.batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", str(config.embedding.batch_size)))
+        config.embedding.batch_size = int(
+            os.getenv("EMBEDDING_BATCH_SIZE", str(config.embedding.batch_size))
+        )
 
         # Vector Store
         config.vector_store.backend = os.getenv("VECTOR_STORE_BACKEND", config.vector_store.backend)
-        config.vector_store.index_name = os.getenv("VECTOR_STORE_INDEX_NAME", config.vector_store.index_name)
+        config.vector_store.index_name = os.getenv(
+            "VECTOR_STORE_INDEX_NAME", config.vector_store.index_name
+        )
         config.vector_store.api_key = os.getenv("PINECONE_API_KEY")
-        config.vector_store.environment = os.getenv("PINECONE_ENVIRONMENT", config.vector_store.environment)
+        config.vector_store.environment = os.getenv(
+            "PINECONE_ENVIRONMENT", config.vector_store.environment
+        )
         config.vector_store.url = os.getenv("WEAVIATE_URL")
 
         # LLM
@@ -233,13 +247,23 @@ class ConfigManager:
 
         # Cache
         config.cache.redis_url = os.getenv("REDIS_URL", config.cache.redis_url)
-        config.cache.default_ttl = int(os.getenv("CACHE_DEFAULT_TTL", str(config.cache.default_ttl)))
-        config.cache.enabled = os.getenv("CACHE_ENABLED", str(config.cache.enabled)).lower() == "true"
+        config.cache.default_ttl = int(
+            os.getenv("CACHE_DEFAULT_TTL", str(config.cache.default_ttl))
+        )
+        config.cache.enabled = (
+            os.getenv("CACHE_ENABLED", str(config.cache.enabled)).lower() == "true"
+        )
 
         # Rate Limiting
-        config.rate_limit.max_requests = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", str(config.rate_limit.max_requests)))
-        config.rate_limit.window_seconds = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", str(config.rate_limit.window_seconds)))
-        config.rate_limit.enabled = os.getenv("RATE_LIMIT_ENABLED", str(config.rate_limit.enabled)).lower() == "true"
+        config.rate_limit.max_requests = int(
+            os.getenv("RATE_LIMIT_MAX_REQUESTS", str(config.rate_limit.max_requests))
+        )
+        config.rate_limit.window_seconds = int(
+            os.getenv("RATE_LIMIT_WINDOW_SECONDS", str(config.rate_limit.window_seconds))
+        )
+        config.rate_limit.enabled = (
+            os.getenv("RATE_LIMIT_ENABLED", str(config.rate_limit.enabled)).lower() == "true"
+        )
 
         # Logging
         config.logging.level = os.getenv("LOG_LEVEL", config.logging.level)
@@ -253,10 +277,15 @@ class ConfigManager:
 
         cors_origins_env = os.getenv("CORS_ORIGINS")
         if cors_origins_env:
-            config.security.cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+            config.security.cors_origins = [
+                origin.strip() for origin in cors_origins_env.split(",")
+            ]
 
         # Monitoring
-        config.monitoring.prometheus_enabled = os.getenv("PROMETHEUS_ENABLED", str(config.monitoring.prometheus_enabled)).lower() == "true"
+        config.monitoring.prometheus_enabled = (
+            os.getenv("PROMETHEUS_ENABLED", str(config.monitoring.prometheus_enabled)).lower()
+            == "true"
+        )
 
         # Data paths
         config.data_dir = os.getenv("DATA_DIR", config.data_dir)
@@ -322,7 +351,9 @@ class ConfigManager:
 
         # Raise exception if there are validation errors
         if errors:
-            error_message = "Configuration validation errors:\n" + "\n".join(f"- {error}" for error in errors)
+            error_message = "Configuration validation errors:\n" + "\n".join(
+                f"- {error}" for error in errors
+            )
             raise ValueError(error_message)
 
     def get_config(self) -> RAGConfig:
@@ -341,7 +372,7 @@ class ConfigManager:
         config = self.get_config()
 
         def dataclass_to_dict(obj):
-            if hasattr(obj, '__dataclass_fields__'):
+            if hasattr(obj, "__dataclass_fields__"):
                 return {
                     field_name: dataclass_to_dict(getattr(obj, field_name))
                     for field_name in obj.__dataclass_fields__

@@ -17,9 +17,7 @@ from datetime import datetime
 
 
 def setup_logging(
-    level: str = "INFO",
-    format_type: str = "structured",
-    log_file: Optional[str] = None
+    level: str = "INFO", format_type: str = "structured", log_file: Optional[str] = None
 ) -> None:
     """
     Setup comprehensive logging configuration for the RAG system.
@@ -63,7 +61,7 @@ def setup_production_logging(level: str = "INFO", log_file: Optional[str] = None
                 structlog.processors.StackInfoRenderer(),
                 structlog.processors.format_exc_info,
                 structlog.processors.UnicodeDecoder(),
-                structlog.processors.JSONRenderer()
+                structlog.processors.JSONRenderer(),
             ],
             context_class=dict,
             logger_factory=structlog.stdlib.LoggerFactory(),
@@ -73,41 +71,31 @@ def setup_production_logging(level: str = "INFO", log_file: Optional[str] = None
 
         # Setup stdlib logging
         logging_config = {
-            'version': 1,
-            'disable_existing_loggers': False,
-            'formatters': {
-                'json': {
-                    'format': '%(message)s'
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {"json": {"format": "%(message)s"}},
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "level": level,
+                    "formatter": "json",
+                    "stream": sys.stdout,
                 }
             },
-            'handlers': {
-                'console': {
-                    'class': 'logging.StreamHandler',
-                    'level': level,
-                    'formatter': 'json',
-                    'stream': sys.stdout
-                }
-            },
-            'loggers': {
-                '': {
-                    'handlers': ['console'],
-                    'level': level,
-                    'propagate': False
-                }
-            }
+            "loggers": {"": {"handlers": ["console"], "level": level, "propagate": False}},
         }
 
         # Add file handler if log file specified
         if log_file:
-            logging_config['handlers']['file'] = {
-                'class': 'logging.handlers.RotatingFileHandler',
-                'level': level,
-                'formatter': 'json',
-                'filename': log_file,
-                'maxBytes': 10485760,  # 10MB
-                'backupCount': 5
+            logging_config["handlers"]["file"] = {
+                "class": "logging.handlers.RotatingFileHandler",
+                "level": level,
+                "formatter": "json",
+                "filename": log_file,
+                "maxBytes": 10485760,  # 10MB
+                "backupCount": 5,
             }
-            logging_config['loggers']['']['handlers'].append('file')
+            logging_config["loggers"][""]["handlers"].append("file")
 
         logging.config.dictConfig(logging_config)
 
@@ -117,11 +105,10 @@ def setup_production_logging(level: str = "INFO", log_file: Optional[str] = None
 
     # Test logging
     logger = logging.getLogger(__name__)
-    logger.info("Production logging configured", extra={
-        'level': level,
-        'format': 'structured_json',
-        'file_logging': log_file is not None
-    })
+    logger.info(
+        "Production logging configured",
+        extra={"level": level, "format": "structured_json", "file_logging": log_file is not None},
+    )
 
 
 def setup_development_logging(level: str = "DEBUG", format_type: str = "simple") -> None:
@@ -145,9 +132,7 @@ def setup_development_logging(level: str = "DEBUG", format_type: str = "simple")
 
 
 def setup_standard_logging(
-    level: str = "INFO",
-    format_type: str = "simple",
-    log_file: Optional[str] = None
+    level: str = "INFO", format_type: str = "simple", log_file: Optional[str] = None
 ) -> None:
     """
     Setup standard Python logging.
@@ -158,46 +143,39 @@ def setup_standard_logging(
         log_file: Optional log file path
     """
     formatters = {
-        'simple': {
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "simple": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "detailed": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s - %(message)s"
         },
-        'detailed': {
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s - %(message)s'
-        },
-        'json': {
-            '()': 'rag_system.infrastructure.logging_config.JSONFormatter'
-        }
+        "json": {"()": "rag_system.infrastructure.logging_config.JSONFormatter"},
     }
 
     handlers = {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': level,
-            'formatter': format_type,
-            'stream': sys.stdout
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": level,
+            "formatter": format_type,
+            "stream": sys.stdout,
         }
     }
 
     # Add file handler if specified
     if log_file:
-        handlers['file'] = {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'level': level,
-            'formatter': format_type,
-            'filename': log_file,
-            'maxBytes': 10485760,  # 10MB
-            'backupCount': 5
+        handlers["file"] = {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": level,
+            "formatter": format_type,
+            "filename": log_file,
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
         }
 
     logging_config = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': formatters,
-        'handlers': handlers,
-        'root': {
-            'level': level,
-            'handlers': list(handlers.keys())
-        }
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": formatters,
+        "handlers": handlers,
+        "root": {"level": level, "handlers": list(handlers.keys())},
     }
 
     logging.config.dictConfig(logging_config)
@@ -220,37 +198,55 @@ class JSONFormatter(logging.Formatter):
         """
         # Build log entry
         log_entry = {
-            'timestamp': datetime.fromtimestamp(record.created).isoformat(),
-            'level': record.levelname,
-            'logger': record.name,
-            'message': record.getMessage(),
-            'module': record.module,
-            'function': record.funcName,
-            'line': record.lineno
+            "timestamp": datetime.fromtimestamp(record.created).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
         }
 
         # Add extra fields if present
-        if hasattr(record, 'user_id'):
-            log_entry['user_id'] = record.user_id
+        if hasattr(record, "user_id"):
+            log_entry["user_id"] = record.user_id
 
-        if hasattr(record, 'query_id'):
-            log_entry['query_id'] = record.query_id
+        if hasattr(record, "query_id"):
+            log_entry["query_id"] = record.query_id
 
-        if hasattr(record, 'processing_time'):
-            log_entry['processing_time'] = record.processing_time
+        if hasattr(record, "processing_time"):
+            log_entry["processing_time"] = record.processing_time
 
         # Add exception info if present
         if record.exc_info:
-            log_entry['exception'] = self.formatException(record.exc_info)
+            log_entry["exception"] = self.formatException(record.exc_info)
 
         # Add any extra fields from the record
         for key, value in record.__dict__.items():
-            if key not in ['name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
-                          'filename', 'module', 'lineno', 'funcName', 'created',
-                          'msecs', 'relativeCreated', 'thread', 'threadName',
-                          'processName', 'process', 'exc_info', 'exc_text',
-                          'stack_info', 'getMessage']:
-                if not key.startswith('_'):
+            if key not in [
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "getMessage",
+            ]:
+                if not key.startswith("_"):
                     log_entry[key] = value
 
         return json.dumps(log_entry, default=str, ensure_ascii=False)
@@ -319,10 +315,7 @@ class UserContextFilter(logging.Filter):
 
 
 def get_logger_with_context(
-    name: str,
-    user_id: Optional[str] = None,
-    request_id: Optional[str] = None,
-    **kwargs
+    name: str, user_id: Optional[str] = None, request_id: Optional[str] = None, **kwargs
 ) -> logging.Logger:
     """
     Get a logger with additional context.
@@ -349,10 +342,14 @@ def get_logger_with_context(
     if kwargs:
         original_makeRecord = logger.makeRecord
 
-        def makeRecord(name, level, fn, lno, msg, args, exc_info, func=None, extra=None, sinfo=None):
+        def makeRecord(
+            name, level, fn, lno, msg, args, exc_info, func=None, extra=None, sinfo=None
+        ):
             extra = extra or {}
             extra.update(kwargs)
-            return original_makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
+            return original_makeRecord(
+                name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
+            )
 
         logger.makeRecord = makeRecord
 
@@ -365,13 +362,13 @@ def configure_external_loggers() -> None:
     """
     # Suppress noisy external loggers
     external_loggers = {
-        'urllib3.connectionpool': 'WARNING',
-        'requests.packages.urllib3': 'WARNING',
-        'botocore': 'WARNING',
-        'boto3': 'WARNING',
-        'openai': 'WARNING',
-        'httpx': 'WARNING',
-        'httpcore': 'WARNING'
+        "urllib3.connectionpool": "WARNING",
+        "requests.packages.urllib3": "WARNING",
+        "botocore": "WARNING",
+        "boto3": "WARNING",
+        "openai": "WARNING",
+        "httpx": "WARNING",
+        "httpcore": "WARNING",
     }
 
     for logger_name, level in external_loggers.items():
@@ -388,14 +385,12 @@ def setup_audit_logging(audit_log_file: str = "audit.log") -> logging.Logger:
     Returns:
         Audit logger instance
     """
-    audit_logger = logging.getLogger('audit')
+    audit_logger = logging.getLogger("audit")
     audit_logger.setLevel(logging.INFO)
 
     # Create file handler for audit logs
     handler = logging.handlers.RotatingFileHandler(
-        audit_log_file,
-        maxBytes=10485760,  # 10MB
-        backupCount=10
+        audit_log_file, maxBytes=10485760, backupCount=10  # 10MB
     )
 
     # Use JSON formatter for audit logs

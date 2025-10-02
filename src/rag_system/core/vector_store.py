@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     # dotenv is optional, environment variables can still be set manually
@@ -97,9 +98,7 @@ class VectorStore(VectorStoreBase):
         try:
             from pinecone import Pinecone
 
-            pc = Pinecone(
-                api_key=self.config.get("api_key")
-            )
+            pc = Pinecone(api_key=self.config.get("api_key"))
             return pc
 
         except ImportError:
@@ -112,11 +111,13 @@ class VectorStore(VectorStoreBase):
 
             return weaviate.Client(
                 url=self.config.get("url", "http://localhost:8080"),
-                auth_client_secret=self.config.get("auth_config")
+                auth_client_secret=self.config.get("auth_config"),
             )
 
         except ImportError:
-            raise ImportError("Weaviate library required. Install with: pip install weaviate-client")
+            raise ImportError(
+                "Weaviate library required. Install with: pip install weaviate-client"
+            )
 
     def _create_chroma_client(self):
         """Create ChromaDB client."""
@@ -152,8 +153,8 @@ class VectorStore(VectorStoreBase):
                 metric=self.config.get("metric", "cosine"),
                 spec=ServerlessSpec(
                     cloud=self.config.get("cloud", "aws"),
-                    region=self.config.get("region", "us-east-1")
-                )
+                    region=self.config.get("region", "us-east-1"),
+                ),
             )
             logger.info(f"Created Pinecone index: {index_name}")
 
@@ -184,9 +185,9 @@ class VectorStore(VectorStoreBase):
 
         # Validate chunks
         for i, chunk in enumerate(chunks):
-            if 'embedding' not in chunk:
+            if "embedding" not in chunk:
                 raise ValueError(f"Chunk {i} missing embedding")
-            if 'metadata' not in chunk:
+            if "metadata" not in chunk:
                 raise ValueError(f"Chunk {i} missing metadata")
 
         try:
@@ -210,19 +211,16 @@ class VectorStore(VectorStoreBase):
         for chunk in chunks:
             chunk_id = f"{chunk['metadata']['source']}#{chunk['metadata']['chunk_id']}"
             vector = {
-                'id': chunk_id,
-                'values': chunk['embedding'],
-                'metadata': {
-                    **chunk['metadata'],
-                    'content': chunk['content']
-                }
+                "id": chunk_id,
+                "values": chunk["embedding"],
+                "metadata": {**chunk["metadata"], "content": chunk["content"]},
             }
             vectors.append(vector)
 
         # Batch upsert for better performance
         batch_size = 100
         for i in range(0, len(vectors), batch_size):
-            batch = vectors[i:i + batch_size]
+            batch = vectors[i : i + batch_size]
             self.index.upsert(vectors=batch)
 
     def _store_chroma(self, chunks: List[Dict[str, Any]]) -> None:
@@ -235,16 +233,11 @@ class VectorStore(VectorStoreBase):
         for chunk in chunks:
             chunk_id = f"{chunk['metadata']['source']}#{chunk['metadata']['chunk_id']}"
             ids.append(chunk_id)
-            embeddings.append(chunk['embedding'])
-            documents.append(chunk['content'])
-            metadatas.append(chunk['metadata'])
+            embeddings.append(chunk["embedding"])
+            documents.append(chunk["content"])
+            metadatas.append(chunk["metadata"])
 
-        self.index.add(
-            ids=ids,
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas
-        )
+        self.index.add(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
 
     def search(self, query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
         """
@@ -277,19 +270,15 @@ class VectorStore(VectorStoreBase):
 
     def _search_pinecone(self, query_embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
         """Search Pinecone index."""
-        response = self.index.query(
-            vector=query_embedding,
-            top_k=top_k,
-            include_metadata=True
-        )
+        response = self.index.query(vector=query_embedding, top_k=top_k, include_metadata=True)
 
         results = []
         for match in response.matches:
             result = {
-                'id': match.id,
-                'score': match.score,
-                'content': match.metadata.get('content', ''),
-                'metadata': match.metadata
+                "id": match.id,
+                "score": match.score,
+                "content": match.metadata.get("content", ""),
+                "metadata": match.metadata,
             }
             results.append(result)
 
@@ -297,18 +286,15 @@ class VectorStore(VectorStoreBase):
 
     def _search_chroma(self, query_embedding: List[float], top_k: int) -> List[Dict[str, Any]]:
         """Search ChromaDB collection."""
-        response = self.index.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k
-        )
+        response = self.index.query(query_embeddings=[query_embedding], n_results=top_k)
 
         results = []
-        for i in range(len(response['ids'][0])):
+        for i in range(len(response["ids"][0])):
             result = {
-                'id': response['ids'][0][i],
-                'score': 1 - response['distances'][0][i],  # Convert distance to similarity
-                'content': response['documents'][0][i],
-                'metadata': response['metadatas'][0][i]
+                "id": response["ids"][0][i],
+                "score": 1 - response["distances"][0][i],  # Convert distance to similarity
+                "content": response["documents"][0][i],
+                "metadata": response["metadatas"][0][i],
             }
             results.append(result)
 

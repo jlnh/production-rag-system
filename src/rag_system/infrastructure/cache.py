@@ -26,10 +26,7 @@ class QueryCache:
     """
 
     def __init__(
-        self,
-        redis_url: Optional[str] = None,
-        default_ttl: int = 3600,
-        max_cache_size: int = 10000
+        self, redis_url: Optional[str] = None, default_ttl: int = 3600, max_cache_size: int = 10000
     ):
         """
         Initialize the query cache.
@@ -50,16 +47,17 @@ class QueryCache:
         if self._redis_client is None:
             try:
                 import redis
+
                 self._redis_client = redis.from_url(
-                    self.redis_url,
-                    decode_responses=True,
-                    health_check_interval=30
+                    self.redis_url, decode_responses=True, health_check_interval=30
                 )
                 # Test connection
                 self._redis_client.ping()
                 logger.info("Connected to Redis for query caching")
             except ImportError:
-                raise ImportError("redis library is required for caching. Install with: pip install redis")
+                raise ImportError(
+                    "redis library is required for caching. Install with: pip install redis"
+                )
             except Exception as e:
                 logger.error(f"Failed to connect to Redis: {str(e)}")
                 raise
@@ -67,10 +65,7 @@ class QueryCache:
         return self._redis_client
 
     def get_cache_key(
-        self,
-        query: str,
-        filters: Optional[Dict[str, Any]] = None,
-        user_id: Optional[str] = None
+        self, query: str, filters: Optional[Dict[str, Any]] = None, user_id: Optional[str] = None
     ) -> str:
         """
         Generate a cache key for a query.
@@ -129,9 +124,9 @@ class QueryCache:
             result = json.loads(cached_data)
 
             # Add cache metadata
-            result['metadata'] = result.get('metadata', {})
-            result['metadata']['cached'] = True
-            result['metadata']['cache_hit_time'] = time.time()
+            result["metadata"] = result.get("metadata", {})
+            result["metadata"]["cached"] = True
+            result["metadata"]["cache_hit_time"] = time.time()
 
             logger.debug(f"Cache hit for key: {cache_key}")
             return result
@@ -147,10 +142,7 @@ class QueryCache:
             return None
 
     def cache_result(
-        self,
-        cache_key: str,
-        result: Dict[str, Any],
-        ttl: Optional[int] = None
+        self, cache_key: str, result: Dict[str, Any], ttl: Optional[int] = None
     ) -> bool:
         """
         Cache a query result.
@@ -174,8 +166,8 @@ class QueryCache:
             cache_data = self._sanitize_for_cache(cache_data)
 
             # Add cache metadata
-            cache_data['cached_at'] = time.time()
-            cache_data['cache_ttl'] = cache_ttl
+            cache_data["cached_at"] = time.time()
+            cache_data["cache_ttl"] = cache_ttl
 
             # Serialize and store
             serialized_data = json.dumps(cache_data, default=str)
@@ -206,17 +198,17 @@ class QueryCache:
         base_ttl = self.default_ttl
 
         # Longer TTL for expensive queries (high retrieval time)
-        retrieval_time = result.get('metadata', {}).get('query_time', 0)
+        retrieval_time = result.get("metadata", {}).get("query_time", 0)
         if retrieval_time > 2.0:
             base_ttl = base_ttl * 2  # Cache expensive queries longer
 
         # Shorter TTL for low-confidence results
-        confidence = result.get('confidence', 1.0)
+        confidence = result.get("confidence", 1.0)
         if confidence < 0.7:
             base_ttl = base_ttl // 2  # Cache uncertain results for less time
 
         # Longer TTL for queries with many sources (likely stable)
-        num_sources = len(result.get('sources', []))
+        num_sources = len(result.get("sources", []))
         if num_sources >= 5:
             base_ttl = int(base_ttl * 1.5)
 
@@ -235,15 +227,15 @@ class QueryCache:
         sanitized = result.copy()
 
         # Remove potentially sensitive metadata
-        metadata = sanitized.get('metadata', {})
-        sensitive_keys = ['user_id', 'api_key', 'internal_ids']
+        metadata = sanitized.get("metadata", {})
+        sensitive_keys = ["user_id", "api_key", "internal_ids"]
 
         for key in sensitive_keys:
             metadata.pop(key, None)
 
         # Truncate very long answers for cache efficiency
-        if 'answer' in sanitized and len(sanitized['answer']) > 5000:
-            sanitized['answer'] = sanitized['answer'][:5000] + "... [truncated for cache]"
+        if "answer" in sanitized and len(sanitized["answer"]) > 5000:
+            sanitized["answer"] = sanitized["answer"][:5000] + "... [truncated for cache]"
 
         return sanitized
 
@@ -260,7 +252,7 @@ class QueryCache:
 
                 # Get keys with TTL information
                 keys_with_ttl = []
-                for key in cache_keys[:evict_count * 2]:  # Sample more than needed
+                for key in cache_keys[: evict_count * 2]:  # Sample more than needed
                     ttl = self.redis_client.ttl(key)
                     keys_with_ttl.append((key, ttl))
 
@@ -271,7 +263,9 @@ class QueryCache:
                 keys_to_evict = [key for key, _ in keys_with_ttl[:evict_count]]
                 if keys_to_evict:
                     self.redis_client.delete(*keys_to_evict)
-                    logger.info(f"Evicted {len(keys_to_evict)} cache entries to maintain size limit")
+                    logger.info(
+                        f"Evicted {len(keys_to_evict)} cache entries to maintain size limit"
+                    )
 
         except Exception as e:
             logger.error(f"Error managing cache size: {str(e)}")
@@ -294,7 +288,9 @@ class QueryCache:
 
             if keys:
                 deleted_count = self.redis_client.delete(*keys)
-                logger.info(f"Invalidated {deleted_count} cache entries matching pattern: {pattern}")
+                logger.info(
+                    f"Invalidated {deleted_count} cache entries matching pattern: {pattern}"
+                )
                 return deleted_count
             else:
                 logger.info(f"No cache entries found matching pattern: {pattern}")
@@ -344,22 +340,22 @@ class QueryCache:
             avg_ttl = sum(ttl_distribution) / len(ttl_distribution) if ttl_distribution else 0
 
             return {
-                'total_entries': total_entries,
-                'max_cache_size': self.max_cache_size,
-                'cache_utilization': (total_entries / self.max_cache_size) * 100,
-                'estimated_memory_bytes': estimated_total_memory,
-                'avg_memory_per_entry': avg_memory_per_entry,
-                'avg_ttl_seconds': avg_ttl,
-                'default_ttl': self.default_ttl,
-                'sampled_entries': sample_size
+                "total_entries": total_entries,
+                "max_cache_size": self.max_cache_size,
+                "cache_utilization": (total_entries / self.max_cache_size) * 100,
+                "estimated_memory_bytes": estimated_total_memory,
+                "avg_memory_per_entry": avg_memory_per_entry,
+                "avg_ttl_seconds": avg_ttl,
+                "default_ttl": self.default_ttl,
+                "sampled_entries": sample_size,
             }
 
         except Exception as e:
             logger.error(f"Error getting cache stats: {str(e)}")
             return {
-                'error': str(e),
-                'max_cache_size': self.max_cache_size,
-                'default_ttl': self.default_ttl
+                "error": str(e),
+                "max_cache_size": self.max_cache_size,
+                "default_ttl": self.default_ttl,
             }
 
     def warm_cache(self, queries: List[str], user_id: Optional[str] = None) -> int:
@@ -412,18 +408,18 @@ class QueryCache:
             stats = self.get_cache_stats()
 
             return {
-                'healthy': True,
-                'redis_connected': True,
-                'response_time_ms': response_time * 1000,
-                'cache_entries': stats.get('total_entries', 0),
-                'cache_utilization_percent': stats.get('cache_utilization', 0),
-                'default_ttl': self.default_ttl
+                "healthy": True,
+                "redis_connected": True,
+                "response_time_ms": response_time * 1000,
+                "cache_entries": stats.get("total_entries", 0),
+                "cache_utilization_percent": stats.get("cache_utilization", 0),
+                "default_ttl": self.default_ttl,
             }
 
         except Exception as e:
             return {
-                'healthy': False,
-                'redis_connected': False,
-                'error': str(e),
-                'default_ttl': self.default_ttl
+                "healthy": False,
+                "redis_connected": False,
+                "error": str(e),
+                "default_ttl": self.default_ttl,
             }

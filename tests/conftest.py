@@ -12,6 +12,7 @@ from unittest.mock import Mock, MagicMock
 # Import test modules
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from rag_system.core import DocumentProcessor, EmbeddingGenerator, VectorStore
@@ -27,7 +28,7 @@ def sample_documents() -> List[str]:
         "Natural language processing helps computers understand and interpret human language effectively.",
         "Deep learning uses neural networks with multiple layers to recognize complex patterns in data.",
         "Retrieval-Augmented Generation combines information retrieval with text generation for better responses.",
-        "Vector databases store high-dimensional embeddings for efficient similarity search applications."
+        "Vector databases store high-dimensional embeddings for efficient similarity search applications.",
     ]
 
 
@@ -36,20 +37,20 @@ def sample_chunks() -> List[Dict[str, Any]]:
     """Sample document chunks with metadata."""
     return [
         {
-            'content': 'Machine learning is a subset of artificial intelligence.',
-            'metadata': {'source': 'ml_doc.txt', 'chunk_id': 0},
-            'embedding': [0.1] * 1536  # Mock embedding
+            "content": "Machine learning is a subset of artificial intelligence.",
+            "metadata": {"source": "ml_doc.txt", "chunk_id": 0},
+            "embedding": [0.1] * 1536,  # Mock embedding
         },
         {
-            'content': 'Natural language processing helps computers understand language.',
-            'metadata': {'source': 'nlp_doc.txt', 'chunk_id': 0},
-            'embedding': [0.2] * 1536  # Mock embedding
+            "content": "Natural language processing helps computers understand language.",
+            "metadata": {"source": "nlp_doc.txt", "chunk_id": 0},
+            "embedding": [0.2] * 1536,  # Mock embedding
         },
         {
-            'content': 'Deep learning uses neural networks for pattern recognition.',
-            'metadata': {'source': 'dl_doc.txt', 'chunk_id': 0},
-            'embedding': [0.3] * 1536  # Mock embedding
-        }
+            "content": "Deep learning uses neural networks for pattern recognition.",
+            "metadata": {"source": "dl_doc.txt", "chunk_id": 0},
+            "embedding": [0.3] * 1536,  # Mock embedding
+        },
     ]
 
 
@@ -70,10 +71,10 @@ def mock_vector_store():
     mock.store_chunks.return_value = None
     mock.search.return_value = [
         {
-            'id': 'doc_1',
-            'score': 0.95,
-            'content': 'Machine learning is a subset of AI.',
-            'metadata': {'source': 'ml_doc.txt'}
+            "id": "doc_1",
+            "score": 0.95,
+            "content": "Machine learning is a subset of AI.",
+            "metadata": {"source": "ml_doc.txt"},
         }
     ]
     mock.ping.return_value = True
@@ -107,7 +108,7 @@ def test_queries() -> Dict[str, List[str]]:
         "machine learning artificial intelligence": ["ml_doc.txt"],
         "natural language processing NLP": ["nlp_doc.txt"],
         "deep learning neural networks": ["dl_doc.txt"],
-        "vector search similarity": ["vector_doc.txt"]
+        "vector search similarity": ["vector_doc.txt"],
     }
 
 
@@ -150,18 +151,15 @@ async def async_mock_rag_service():
 
     # Set return values
     mock.health_check.return_value = {
-        'healthy': True,
-        'services': {
-            'vector_store': {'healthy': True},
-            'embedding_generator': {'healthy': True}
-        }
+        "healthy": True,
+        "services": {"vector_store": {"healthy": True}, "embedding_generator": {"healthy": True}},
     }
 
     mock.process_query.return_value = {
-        'answer': 'This is a test answer.',
-        'confidence': 0.85,
-        'sources': [],
-        'metadata': {'query_time': 1.2}
+        "answer": "This is a test answer.",
+        "confidence": 0.85,
+        "sources": [],
+        "metadata": {"query_time": 1.2},
     }
 
     return mock

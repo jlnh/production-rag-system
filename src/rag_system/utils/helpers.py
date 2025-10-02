@@ -32,17 +32,13 @@ def generate_hash(text: str, algorithm: str = "sha256") -> str:
     Raises:
         ValueError: If algorithm is not supported
     """
-    algorithms = {
-        'md5': hashlib.md5,
-        'sha1': hashlib.sha1,
-        'sha256': hashlib.sha256
-    }
+    algorithms = {"md5": hashlib.md5, "sha1": hashlib.sha1, "sha256": hashlib.sha256}
 
     if algorithm not in algorithms:
         raise ValueError(f"Unsupported algorithm: {algorithm}")
 
     hash_func = algorithms[algorithm]
-    return hash_func(text.encode('utf-8')).hexdigest()
+    return hash_func(text.encode("utf-8")).hexdigest()
 
 
 def chunk_list(items: List[Any], chunk_size: int) -> List[List[Any]]:
@@ -62,7 +58,7 @@ def chunk_list(items: List[Any], chunk_size: int) -> List[List[Any]]:
     if chunk_size < 1:
         raise ValueError("Chunk size must be at least 1")
 
-    return [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]
+    return [items[i : i + chunk_size] for i in range(0, len(items), chunk_size)]
 
 
 def clean_text(text: str) -> str:
@@ -79,14 +75,14 @@ def clean_text(text: str) -> str:
         return ""
 
     # Remove extra whitespace
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"\s+", " ", text)
 
     # Remove control characters
-    text = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', text)
+    text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", text)
 
     # Normalize quotes
     text = text.replace('"', '"').replace('"', '"')
-    text = text.replace(''', "'").replace(''', "'")
+    text = text.replace(""", "'").replace(""", "'")
 
     # Strip leading/trailing whitespace
     text = text.strip()
@@ -112,15 +108,59 @@ def extract_keywords(text: str, max_keywords: int = 10) -> List[str]:
     cleaned_text = clean_text(text.lower())
 
     # Split into words
-    words = re.findall(r'\b[a-zA-Z]{3,}\b', cleaned_text)
+    words = re.findall(r"\b[a-zA-Z]{3,}\b", cleaned_text)
 
     # Filter common stop words
     stop_words = {
-        'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-        'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have',
-        'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
-        'may', 'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you',
-        'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "can",
+        "this",
+        "that",
+        "these",
+        "those",
+        "i",
+        "you",
+        "he",
+        "she",
+        "it",
+        "we",
+        "they",
+        "me",
+        "him",
+        "her",
+        "us",
+        "them",
     }
 
     words = [word for word in words if word not in stop_words]
@@ -148,7 +188,7 @@ def validate_email(email: str) -> bool:
     if not email:
         return False
 
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return bool(re.match(pattern, email))
 
 
@@ -166,13 +206,13 @@ def sanitize_filename(filename: str) -> str:
         return "unnamed_file"
 
     # Replace invalid characters with underscores
-    sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    sanitized = re.sub(r'[<>:"/\\|?*]', "_", filename)
 
     # Remove multiple consecutive underscores
-    sanitized = re.sub(r'_+', '_', sanitized)
+    sanitized = re.sub(r"_+", "_", sanitized)
 
     # Remove leading/trailing underscores and dots
-    sanitized = sanitized.strip('_.')
+    sanitized = sanitized.strip("_.")
 
     # Ensure filename is not empty
     if not sanitized:
@@ -240,7 +280,7 @@ def retry_with_backoff(
     base_delay: float = 1.0,
     max_delay: float = 60.0,
     backoff_factor: float = 2.0,
-    exceptions: Tuple = (Exception,)
+    exceptions: Tuple = (Exception,),
 ):
     """
     Retry function with exponential backoff.
@@ -266,7 +306,7 @@ def retry_with_backoff(
             if attempt == max_retries:
                 raise e
 
-            delay = min(base_delay * (backoff_factor ** attempt), max_delay)
+            delay = min(base_delay * (backoff_factor**attempt), max_delay)
             logger.warning(f"Attempt {attempt + 1} failed: {str(e)}. Retrying in {delay:.1f}s...")
             time.sleep(delay)
 
@@ -288,7 +328,7 @@ def parse_time_string(time_str: str) -> timedelta:
         raise ValueError("Time string cannot be empty")
 
     # Pattern to match time components
-    pattern = r'(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?'
+    pattern = r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?"
     match = re.match(pattern, time_str.strip())
 
     if not match:
@@ -379,7 +419,7 @@ def truncate_text(text: str, max_length: int, suffix: str = "...") -> str:
     if max_length <= len(suffix):
         return suffix[:max_length]
 
-    return text[:max_length - len(suffix)] + suffix
+    return text[: max_length - len(suffix)] + suffix
 
 
 def calculate_cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
@@ -429,30 +469,26 @@ def get_system_info() -> Dict[str, Any]:
 
     try:
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         return {
-            'platform': platform.platform(),
-            'python_version': sys.version,
-            'cpu_count': psutil.cpu_count(),
-            'memory': {
-                'total': memory.total,
-                'available': memory.available,
-                'percent': memory.percent
+            "platform": platform.platform(),
+            "python_version": sys.version,
+            "cpu_count": psutil.cpu_count(),
+            "memory": {
+                "total": memory.total,
+                "available": memory.available,
+                "percent": memory.percent,
             },
-            'disk': {
-                'total': disk.total,
-                'free': disk.free,
-                'percent': disk.percent
-            },
-            'timestamp': datetime.now().isoformat()
+            "disk": {"total": disk.total, "free": disk.free, "percent": disk.percent},
+            "timestamp": datetime.now().isoformat(),
         }
     except ImportError:
         return {
-            'platform': platform.platform(),
-            'python_version': sys.version,
-            'timestamp': datetime.now().isoformat(),
-            'note': 'psutil not available for detailed system info'
+            "platform": platform.platform(),
+            "python_version": sys.version,
+            "timestamp": datetime.now().isoformat(),
+            "note": "psutil not available for detailed system info",
         }
 
 
@@ -502,6 +538,7 @@ def create_unique_id(prefix: str = "") -> str:
         Unique identifier string
     """
     import uuid
+
     unique_id = str(uuid.uuid4())
 
     if prefix:

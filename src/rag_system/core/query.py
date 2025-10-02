@@ -15,6 +15,7 @@ import os
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     # dotenv is optional, environment variables can still be set manually
@@ -50,17 +51,14 @@ class RAGQueryProcessor:
         if self._llm_client is None:
             try:
                 import openai
+
                 self._llm_client = openai.OpenAI()
             except ImportError:
                 raise ImportError("OpenAI library is required. Install with: pip install openai")
         return self._llm_client
 
     def query(
-        self,
-        question: str,
-        top_k: int = 5,
-        model: str = "gpt-4.1",
-        max_context_length: int = 8000
+        self, question: str, top_k: int = 5, model: str = "gpt-4.1", max_context_length: int = 8000
     ) -> Dict[str, Any]:
         """
         Process a complete RAG query.
@@ -97,13 +95,10 @@ class RAGQueryProcessor:
             if not search_results:
                 logger.warning("No relevant documents found for query")
                 return {
-                    'answer': "I couldn't find any relevant information to answer your question.",
-                    'sources': [],
-                    'confidence': 0.0,
-                    'metadata': {
-                        'query_time': time.time() - start_time,
-                        'num_sources': 0
-                    }
+                    "answer": "I couldn't find any relevant information to answer your question.",
+                    "sources": [],
+                    "confidence": 0.0,
+                    "metadata": {"query_time": time.time() - start_time, "num_sources": 0},
                 }
 
             # Step 3: Build context from results
@@ -118,17 +113,17 @@ class RAGQueryProcessor:
             total_time = time.time() - start_time
 
             response = {
-                'answer': answer,
-                'sources': self._format_sources(search_results),
-                'confidence': self._calculate_confidence(search_results),
-                'metadata': {
-                    'query_time': total_time,
-                    'embedding_time': embedding_time,
-                    'search_time': search_time,
-                    'generation_time': generation_time,
-                    'num_sources': len(search_results),
-                    'model': model
-                }
+                "answer": answer,
+                "sources": self._format_sources(search_results),
+                "confidence": self._calculate_confidence(search_results),
+                "metadata": {
+                    "query_time": total_time,
+                    "embedding_time": embedding_time,
+                    "search_time": search_time,
+                    "generation_time": generation_time,
+                    "num_sources": len(search_results),
+                    "model": model,
+                },
             }
 
             logger.info(f"Query completed successfully in {total_time:.2f}s")
@@ -153,13 +148,13 @@ class RAGQueryProcessor:
         current_length = 0
 
         for i, result in enumerate(search_results):
-            content = result.get('content', '').strip()
+            content = result.get("content", "").strip()
             if not content:
                 continue
 
             # Format source with metadata
             source_info = f"Source {i+1}"
-            if 'metadata' in result and 'source' in result['metadata']:
+            if "metadata" in result and "source" in result["metadata"]:
                 source_info += f" ({result['metadata']['source']})"
 
             formatted_content = f"{source_info}:\n{content}\n"
@@ -200,16 +195,13 @@ class RAGQueryProcessor:
                     {
                         "role": "system",
                         "content": "You are a helpful assistant that answers questions based on the provided context. "
-                                 "Always base your answers on the given context. If the context doesn't contain "
-                                 "enough information to answer the question, say so clearly."
+                        "Always base your answers on the given context. If the context doesn't contain "
+                        "enough information to answer the question, say so clearly.",
                     },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
-                max_tokens=1000
+                max_tokens=1000,
             )
 
             return response.choices[0].message.content.strip()
@@ -252,18 +244,24 @@ Answer:"""
 
         for i, result in enumerate(search_results):
             source = {
-                'id': result.get('id', f'source_{i}'),
-                'score': round(result.get('score', 0.0), 3),
-                'preview': result.get('content', '')[:200] + "..." if len(result.get('content', '')) > 200 else result.get('content', ''),
+                "id": result.get("id", f"source_{i}"),
+                "score": round(result.get("score", 0.0), 3),
+                "preview": (
+                    result.get("content", "")[:200] + "..."
+                    if len(result.get("content", "")) > 200
+                    else result.get("content", "")
+                ),
             }
 
             # Add metadata if available
-            if 'metadata' in result:
-                metadata = result['metadata']
-                source.update({
-                    'source_file': metadata.get('source', 'Unknown'),
-                    'chunk_id': metadata.get('chunk_id', 0)
-                })
+            if "metadata" in result:
+                metadata = result["metadata"]
+                source.update(
+                    {
+                        "source_file": metadata.get("source", "Unknown"),
+                        "chunk_id": metadata.get("chunk_id", 0),
+                    }
+                )
 
             sources.append(source)
 
@@ -283,7 +281,7 @@ Answer:"""
             return 0.0
 
         # Simple confidence calculation based on top score
-        top_score = search_results[0].get('score', 0.0)
+        top_score = search_results[0].get("score", 0.0)
 
         # Normalize score to confidence (this is a simple heuristic)
         if top_score > 0.9:
@@ -299,11 +297,7 @@ Answer:"""
 
 
 def rag_query(
-    question: str,
-    embedding_generator,
-    vector_store,
-    top_k: int = 3,
-    model: str = "gpt-4.1"
+    question: str, embedding_generator, vector_store, top_k: int = 3, model: str = "gpt-4.1"
 ) -> str:
     """
     Simple RAG query function for backwards compatibility.
@@ -320,4 +314,4 @@ def rag_query(
     """
     processor = RAGQueryProcessor(embedding_generator, vector_store)
     result = processor.query(question, top_k=top_k, model=model)
-    return result['answer']
+    return result["answer"]

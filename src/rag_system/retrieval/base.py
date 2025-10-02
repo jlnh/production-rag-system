@@ -91,11 +91,11 @@ class BaseRetriever(ABC):
 
         for result in results:
             formatted_result = {
-                'id': result.get('id', ''),
-                'content': result.get('content', ''),
-                'score': result.get('score', 0.0),
-                'metadata': result.get('metadata', {}),
-                'retrieval_method': getattr(self, 'method_name', 'unknown')
+                "id": result.get("id", ""),
+                "content": result.get("content", ""),
+                "score": result.get("score", 0.0),
+                "metadata": result.get("metadata", {}),
+                "retrieval_method": getattr(self, "method_name", "unknown"),
             }
             formatted.append(formatted_result)
 
@@ -193,7 +193,9 @@ class KeywordRetriever(BaseRetriever):
                 self._document_map[i] = doc
 
         except ImportError:
-            raise ImportError("rank_bm25 is required for keyword retrieval. Install with: pip install rank_bm25")
+            raise ImportError(
+                "rank_bm25 is required for keyword retrieval. Install with: pip install rank_bm25"
+            )
 
     def retrieve(self, query: str, top_k: int = 5, **kwargs) -> List[Dict[str, Any]]:
         """
@@ -227,10 +229,10 @@ class KeywordRetriever(BaseRetriever):
             for idx in top_indices:
                 if scores[idx] > 0:  # Only include relevant results
                     result = {
-                        'id': f"doc_{idx}",
-                        'content': self._document_map[idx],
-                        'score': scores[idx],
-                        'metadata': {'document_index': idx}
+                        "id": f"doc_{idx}",
+                        "content": self._document_map[idx],
+                        "score": scores[idx],
+                        "metadata": {"document_index": idx},
                     }
                     results.append(result)
 
@@ -242,7 +244,7 @@ class KeywordRetriever(BaseRetriever):
 
     def add_documents(self, documents: List[Dict[str, Any]]) -> None:
         """Add documents to keyword index."""
-        new_docs = [doc.get('content', '') for doc in documents]
+        new_docs = [doc.get("content", "") for doc in documents]
         self._documents.extend(new_docs)
         self._build_index()
 
@@ -264,7 +266,7 @@ class SearchResult:
         content: str,
         score: float,
         metadata: Optional[Dict[str, Any]] = None,
-        retrieval_method: str = "unknown"
+        retrieval_method: str = "unknown",
     ):
         """
         Initialize search result.
@@ -285,11 +287,11 @@ class SearchResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
-            'id': self.id,
-            'content': self.content,
-            'score': self.score,
-            'metadata': self.metadata,
-            'retrieval_method': self.retrieval_method
+            "id": self.id,
+            "content": self.content,
+            "score": self.score,
+            "metadata": self.metadata,
+            "retrieval_method": self.retrieval_method,
         }
 
     def __repr__(self) -> str:

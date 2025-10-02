@@ -28,7 +28,7 @@ from .helpers import (
     calculate_cosine_similarity,
     get_system_info,
     Timer,
-    create_unique_id
+    create_unique_id,
 )
 
 __all__ = [

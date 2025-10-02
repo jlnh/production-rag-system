@@ -26,7 +26,7 @@ class ReRanker:
         self,
         model_name: str = "BAAI/bge-reranker-base",
         max_length: int = 512,
-        batch_size: int = 32
+        batch_size: int = 32,
     ):
         """
         Initialize the re-ranker.
@@ -47,6 +47,7 @@ class ReRanker:
         if self._model is None:
             try:
                 from sentence_transformers import CrossEncoder
+
                 self._model = CrossEncoder(self.model_name)
                 logger.info(f"Loaded re-ranking model: {self.model_name}")
             except ImportError:
@@ -61,10 +62,7 @@ class ReRanker:
         return self._model
 
     def rerank(
-        self,
-        query: str,
-        documents: List[Dict[str, Any]],
-        top_k: Optional[int] = None
+        self, query: str, documents: List[Dict[str, Any]], top_k: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Re-rank documents based on query-document relevance.
@@ -89,7 +87,7 @@ class ReRanker:
 
         # Validate document format
         for i, doc in enumerate(documents):
-            if 'content' not in doc:
+            if "content" not in doc:
                 raise ValueError(f"Document {i} missing 'content' field")
 
         start_time = time.time()
@@ -113,15 +111,13 @@ class ReRanker:
             scored_documents = []
             for doc, score in zip(documents, scores):
                 reranked_doc = doc.copy()
-                reranked_doc['rerank_score'] = float(score)
-                reranked_doc['original_score'] = doc.get('score', 0.0)
+                reranked_doc["rerank_score"] = float(score)
+                reranked_doc["original_score"] = doc.get("score", 0.0)
                 scored_documents.append(reranked_doc)
 
             # Sort by re-ranking score
             ranked_documents = sorted(
-                scored_documents,
-                key=lambda x: x['rerank_score'],
-                reverse=True
+                scored_documents, key=lambda x: x["rerank_score"], reverse=True
             )
 
             # Return top-k if specified
@@ -129,7 +125,9 @@ class ReRanker:
                 ranked_documents = ranked_documents[:top_k]
 
             total_time = time.time() - start_time
-            logger.info(f"Re-ranking completed in {total_time:.2f}s, returned {len(ranked_documents)} documents")
+            logger.info(
+                f"Re-ranking completed in {total_time:.2f}s, returned {len(ranked_documents)} documents"
+            )
 
             return ranked_documents
 
@@ -152,19 +150,19 @@ class ReRanker:
         pairs = []
 
         for doc in documents:
-            content = doc.get('content', '').strip()
+            content = doc.get("content", "").strip()
 
             # Truncate content if too long
             if len(content) > self.max_length:
                 # Try to truncate at sentence boundaries
-                sentences = content.split('. ')
+                sentences = content.split(". ")
                 truncated = ""
                 for sentence in sentences:
                     if len(truncated + sentence) > self.max_length - 100:  # Leave some buffer
                         break
                     truncated += sentence + ". "
 
-                content = truncated.strip() if truncated else content[:self.max_length]
+                content = truncated.strip() if truncated else content[: self.max_length]
 
             pairs.append((query, content))
 
@@ -188,11 +186,11 @@ class ReRanker:
             all_scores = []
 
             for i in range(0, len(pairs), self.batch_size):
-                batch = pairs[i:i + self.batch_size]
+                batch = pairs[i : i + self.batch_size]
                 batch_scores = self.model.predict(batch)
 
                 # Convert to list if it's a numpy array
-                if hasattr(batch_scores, 'tolist'):
+                if hasattr(batch_scores, "tolist"):
                     batch_scores = batch_scores.tolist()
                 elif not isinstance(batch_scores, list):
                     batch_scores = [float(score) for score in batch_scores]
@@ -216,7 +214,7 @@ class ReRanker:
         query: str,
         documents: List[Dict[str, Any]],
         alpha: float = 0.7,
-        top_k: Optional[int] = None
+        top_k: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Re-rank with fusion of original and re-ranking scores.
@@ -237,8 +235,10 @@ class ReRanker:
         reranked_docs = self.rerank(query, documents, top_k=None)
 
         # Normalize both score types for fair fusion
-        original_scores = [doc.get('original_score', doc.get('score', 0.0)) for doc in reranked_docs]
-        rerank_scores = [doc['rerank_score'] for doc in reranked_docs]
+        original_scores = [
+            doc.get("original_score", doc.get("score", 0.0)) for doc in reranked_docs
+        ]
+        rerank_scores = [doc["rerank_score"] for doc in reranked_docs]
 
         norm_original = self._normalize_scores(original_scores)
         norm_rerank = self._normalize_scores(rerank_scores)
@@ -246,11 +246,11 @@ class ReRanker:
         # Compute fused scores
         for i, doc in enumerate(reranked_docs):
             fused_score = alpha * norm_rerank[i] + (1 - alpha) * norm_original[i]
-            doc['fused_score'] = fused_score
-            doc['score'] = fused_score  # Update main score
+            doc["fused_score"] = fused_score
+            doc["score"] = fused_score  # Update main score
 
         # Sort by fused score
-        fused_ranked = sorted(reranked_docs, key=lambda x: x['fused_score'], reverse=True)
+        fused_ranked = sorted(reranked_docs, key=lambda x: x["fused_score"], reverse=True)
 
         # Return top-k if specified
         return fused_ranked[:top_k] if top_k else fused_ranked
@@ -277,7 +277,9 @@ class ReRanker:
 
         return [(score - min_score) / score_range for score in scores]
 
-    def benchmark_model(self, test_queries: List[str], test_documents: List[Dict[str, Any]]) -> Dict[str, float]:
+    def benchmark_model(
+        self, test_queries: List[str], test_documents: List[Dict[str, Any]]
+    ) -> Dict[str, float]:
         """
         Benchmark the re-ranking model performance.
 
@@ -291,7 +293,9 @@ class ReRanker:
         if not test_queries or not test_documents:
             return {}
 
-        logger.info(f"Benchmarking re-ranker with {len(test_queries)} queries and {len(test_documents)} documents")
+        logger.info(
+            f"Benchmarking re-ranker with {len(test_queries)} queries and {len(test_documents)} documents"
+        )
 
         total_time = 0
         total_pairs = 0
@@ -306,11 +310,11 @@ class ReRanker:
         avg_time_per_pair = total_time / total_pairs
 
         return {
-            'avg_time_per_query': avg_time_per_query,
-            'avg_time_per_pair': avg_time_per_pair,
-            'total_queries': len(test_queries),
-            'total_documents': len(test_documents),
-            'model_name': self.model_name
+            "avg_time_per_query": avg_time_per_query,
+            "avg_time_per_pair": avg_time_per_pair,
+            "total_queries": len(test_queries),
+            "total_documents": len(test_documents),
+            "model_name": self.model_name,
         }
 
     def get_model_info(self) -> Dict[str, Any]:
@@ -321,8 +325,8 @@ class ReRanker:
             Dictionary with model information
         """
         return {
-            'model_name': self.model_name,
-            'max_length': self.max_length,
-            'batch_size': self.batch_size,
-            'is_loaded': self._model is not None
+            "model_name": self.model_name,
+            "max_length": self.max_length,
+            "batch_size": self.batch_size,
+            "is_loaded": self._model is not None,
         }

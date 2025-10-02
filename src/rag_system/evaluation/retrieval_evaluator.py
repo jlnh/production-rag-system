@@ -57,7 +57,7 @@ class RetrievalEvaluator:
         """
         if self.test_queries_path and Path(self.test_queries_path).exists():
             try:
-                with open(self.test_queries_path, 'r', encoding='utf-8') as f:
+                with open(self.test_queries_path, "r", encoding="utf-8") as f:
                     queries = json.load(f)
                     logger.info(f"Loaded {len(queries)} test queries from {self.test_queries_path}")
                     return queries
@@ -94,7 +94,7 @@ class RetrievalEvaluator:
             return
 
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(self.test_queries, f, indent=2, ensure_ascii=False)
             logger.info(f"Saved {len(self.test_queries)} test queries to {output_path}")
         except Exception as e:
@@ -104,7 +104,7 @@ class RetrievalEvaluator:
         self,
         retriever,
         top_k_values: List[int] = [1, 3, 5, 10],
-        queries: Optional[Dict[str, List[str]]] = None
+        queries: Optional[Dict[str, List[str]]] = None,
     ) -> Dict[str, Any]:
         """
         Evaluate retrieval system performance.
@@ -131,15 +131,15 @@ class RetrievalEvaluator:
             try:
                 # Retrieve documents
                 retrieved = retriever.retrieve(query, top_k=max(top_k_values))
-                retrieved_ids = [doc.get('id', '') for doc in retrieved]
+                retrieved_ids = [doc.get("id", "") for doc in retrieved]
 
                 # Calculate metrics for this query
                 query_metrics = self._calculate_query_metrics(
                     retrieved_ids, expected_docs, top_k_values
                 )
-                query_metrics['query'] = query
-                query_metrics['num_expected'] = len(expected_docs)
-                query_metrics['num_retrieved'] = len(retrieved_ids)
+                query_metrics["query"] = query
+                query_metrics["num_expected"] = len(expected_docs)
+                query_metrics["num_retrieved"] = len(retrieved_ids)
 
                 results.append(query_metrics)
 
@@ -154,18 +154,15 @@ class RetrievalEvaluator:
 
         # Aggregate results
         aggregated_metrics = self._aggregate_metrics(results, top_k_values)
-        aggregated_metrics['evaluation_time'] = evaluation_time
-        aggregated_metrics['num_queries'] = len(results)
-        aggregated_metrics['individual_results'] = results
+        aggregated_metrics["evaluation_time"] = evaluation_time
+        aggregated_metrics["num_queries"] = len(results)
+        aggregated_metrics["individual_results"] = results
 
         logger.info(f"Evaluation completed in {evaluation_time:.2f}s")
         return aggregated_metrics
 
     def _calculate_query_metrics(
-        self,
-        retrieved_ids: List[str],
-        expected_ids: List[str],
-        top_k_values: List[int]
+        self, retrieved_ids: List[str], expected_ids: List[str], top_k_values: List[int]
     ) -> Dict[str, Any]:
         """
         Calculate metrics for a single query.
@@ -188,28 +185,28 @@ class RetrievalEvaluator:
 
             # Precision@k
             precision_k = len(relevant_at_k) / k if k > 0 else 0.0
-            metrics[f'precision@{k}'] = precision_k
+            metrics[f"precision@{k}"] = precision_k
 
             # Recall@k
             recall_k = len(relevant_at_k) / len(expected_set) if expected_set else 0.0
-            metrics[f'recall@{k}'] = recall_k
+            metrics[f"recall@{k}"] = recall_k
 
             # F1@k
             if precision_k + recall_k > 0:
                 f1_k = 2 * (precision_k * recall_k) / (precision_k + recall_k)
             else:
                 f1_k = 0.0
-            metrics[f'f1@{k}'] = f1_k
+            metrics[f"f1@{k}"] = f1_k
 
         # Mean Reciprocal Rank (MRR)
         mrr = self._calculate_mrr(retrieved_ids, expected_set)
-        metrics['mrr'] = mrr
+        metrics["mrr"] = mrr
 
         # Normalized Discounted Cumulative Gain (NDCG)
         # Using simple binary relevance (relevant=1, not relevant=0)
         for k in top_k_values:
             ndcg_k = self._calculate_ndcg(retrieved_ids[:k], expected_set)
-            metrics[f'ndcg@{k}'] = ndcg_k
+            metrics[f"ndcg@{k}"] = ndcg_k
 
         return metrics
 
@@ -256,9 +253,7 @@ class RetrievalEvaluator:
         return dcg / idcg if idcg > 0 else 0.0
 
     def _aggregate_metrics(
-        self,
-        results: List[Dict[str, Any]],
-        top_k_values: List[int]
+        self, results: List[Dict[str, Any]], top_k_values: List[int]
     ) -> Dict[str, Any]:
         """
         Aggregate metrics across all queries.
@@ -273,32 +268,30 @@ class RetrievalEvaluator:
         aggregated = {}
 
         # Aggregate each metric
-        metric_names = [
-            f'precision@{k}' for k in top_k_values
-        ] + [
-            f'recall@{k}' for k in top_k_values
-        ] + [
-            f'f1@{k}' for k in top_k_values
-        ] + [
-            f'ndcg@{k}' for k in top_k_values
-        ] + ['mrr']
+        metric_names = (
+            [f"precision@{k}" for k in top_k_values]
+            + [f"recall@{k}" for k in top_k_values]
+            + [f"f1@{k}" for k in top_k_values]
+            + [f"ndcg@{k}" for k in top_k_values]
+            + ["mrr"]
+        )
 
         for metric in metric_names:
             values = [result[metric] for result in results if metric in result]
             if values:
-                aggregated[f'avg_{metric}'] = statistics.mean(values)
-                aggregated[f'std_{metric}'] = statistics.stdev(values) if len(values) > 1 else 0.0
-                aggregated[f'min_{metric}'] = min(values)
-                aggregated[f'max_{metric}'] = max(values)
+                aggregated[f"avg_{metric}"] = statistics.mean(values)
+                aggregated[f"std_{metric}"] = statistics.stdev(values) if len(values) > 1 else 0.0
+                aggregated[f"min_{metric}"] = min(values)
+                aggregated[f"max_{metric}"] = max(values)
 
         # Additional aggregate metrics
-        total_expected = sum(result['num_expected'] for result in results)
-        total_retrieved = sum(result['num_retrieved'] for result in results)
+        total_expected = sum(result["num_expected"] for result in results)
+        total_retrieved = sum(result["num_retrieved"] for result in results)
 
-        aggregated['total_expected_docs'] = total_expected
-        aggregated['total_retrieved_docs'] = total_retrieved
-        aggregated['avg_expected_per_query'] = total_expected / len(results)
-        aggregated['avg_retrieved_per_query'] = total_retrieved / len(results)
+        aggregated["total_expected_docs"] = total_expected
+        aggregated["total_retrieved_docs"] = total_retrieved
+        aggregated["avg_expected_per_query"] = total_expected / len(results)
+        aggregated["avg_retrieved_per_query"] = total_retrieved / len(results)
 
         return aggregated
 
@@ -308,7 +301,7 @@ class RetrievalEvaluator:
         system_b,
         system_a_name: str = "System A",
         system_b_name: str = "System B",
-        top_k_values: List[int] = [1, 3, 5, 10]
+        top_k_values: List[int] = [1, 3, 5, 10],
     ) -> Dict[str, Any]:
         """
         Compare two retrieval systems.
@@ -331,19 +324,13 @@ class RetrievalEvaluator:
 
         # Calculate improvements
         comparison = {
-            'system_a': {
-                'name': system_a_name,
-                'metrics': results_a
-            },
-            'system_b': {
-                'name': system_b_name,
-                'metrics': results_b
-            },
-            'improvements': {}
+            "system_a": {"name": system_a_name, "metrics": results_a},
+            "system_b": {"name": system_b_name, "metrics": results_b},
+            "improvements": {},
         }
 
         # Compare key metrics
-        key_metrics = [f'avg_precision@{k}' for k in top_k_values] + ['avg_mrr']
+        key_metrics = [f"avg_precision@{k}" for k in top_k_values] + ["avg_mrr"]
 
         for metric in key_metrics:
             if metric in results_a and metric in results_b:
@@ -351,23 +338,27 @@ class RetrievalEvaluator:
                 value_b = results_b[metric]
 
                 improvement = ((value_b - value_a) / value_a * 100) if value_a > 0 else 0
-                comparison['improvements'][metric] = {
-                    'absolute': value_b - value_a,
-                    'relative_percent': improvement,
-                    'winner': system_b_name if value_b > value_a else system_a_name
+                comparison["improvements"][metric] = {
+                    "absolute": value_b - value_a,
+                    "relative_percent": improvement,
+                    "winner": system_b_name if value_b > value_a else system_a_name,
                 }
 
         # Overall winner
-        precision_5_improvement = comparison['improvements'].get('avg_precision@5', {}).get('relative_percent', 0)
-        mrr_improvement = comparison['improvements'].get('avg_mrr', {}).get('relative_percent', 0)
+        precision_5_improvement = (
+            comparison["improvements"].get("avg_precision@5", {}).get("relative_percent", 0)
+        )
+        mrr_improvement = comparison["improvements"].get("avg_mrr", {}).get("relative_percent", 0)
 
         overall_improvement = (precision_5_improvement + mrr_improvement) / 2
-        comparison['overall_winner'] = system_b_name if overall_improvement > 0 else system_a_name
-        comparison['overall_improvement_percent'] = overall_improvement
+        comparison["overall_winner"] = system_b_name if overall_improvement > 0 else system_a_name
+        comparison["overall_improvement_percent"] = overall_improvement
 
         return comparison
 
-    def create_evaluation_report(self, evaluation_results: Dict[str, Any], output_path: str) -> None:
+    def create_evaluation_report(
+        self, evaluation_results: Dict[str, Any], output_path: str
+    ) -> None:
         """
         Create a human-readable evaluation report.
 
@@ -389,36 +380,38 @@ class RetrievalEvaluator:
         ]
 
         # Add key metrics
-        key_metrics = ['avg_precision@5', 'avg_recall@5', 'avg_f1@5', 'avg_mrr', 'avg_ndcg@5']
+        key_metrics = ["avg_precision@5", "avg_recall@5", "avg_f1@5", "avg_mrr", "avg_ndcg@5"]
         for metric in key_metrics:
             if metric in evaluation_results:
                 value = evaluation_results[metric]
                 report_lines.append(f"- {metric}: {value:.3f}")
 
         # Add detailed metrics table
-        report_lines.extend([
-            "",
-            "## Detailed Metrics",
-            "",
-            "| Metric | Mean | Std | Min | Max |",
-            "|--------|------|-----|-----|-----|"
-        ])
+        report_lines.extend(
+            [
+                "",
+                "## Detailed Metrics",
+                "",
+                "| Metric | Mean | Std | Min | Max |",
+                "|--------|------|-----|-----|-----|",
+            ]
+        )
 
         for metric in sorted(evaluation_results.keys()):
-            if metric.startswith('avg_') and not metric.startswith('avg_expected'):
+            if metric.startswith("avg_") and not metric.startswith("avg_expected"):
                 base_metric = metric[4:]  # Remove 'avg_' prefix
                 mean_val = evaluation_results[metric]
-                std_val = evaluation_results.get(f'std_{base_metric}', 0)
-                min_val = evaluation_results.get(f'min_{base_metric}', mean_val)
-                max_val = evaluation_results.get(f'max_{base_metric}', mean_val)
+                std_val = evaluation_results.get(f"std_{base_metric}", 0)
+                min_val = evaluation_results.get(f"min_{base_metric}", mean_val)
+                max_val = evaluation_results.get(f"max_{base_metric}", mean_val)
 
                 report_lines.append(
                     f"| {base_metric} | {mean_val:.3f} | {std_val:.3f} | {min_val:.3f} | {max_val:.3f} |"
                 )
 
         try:
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(report_lines))
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(report_lines))
             logger.info(f"Evaluation report saved to {output_path}")
         except Exception as e:
             logger.error(f"Error saving evaluation report: {str(e)}")

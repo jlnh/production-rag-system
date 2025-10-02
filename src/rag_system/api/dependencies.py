@@ -17,6 +17,7 @@ import time
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     # dotenv is optional, environment variables can still be set manually
@@ -63,7 +64,7 @@ class ProductionRAGService:
             # Initialize embedding generator
             self.embedding_generator = EmbeddingGenerator(
                 model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
-                batch_size=int(os.getenv("EMBEDDING_BATCH_SIZE", "100"))
+                batch_size=int(os.getenv("EMBEDDING_BATCH_SIZE", "100")),
             )
 
             # Initialize vector store
@@ -72,15 +73,14 @@ class ProductionRAGService:
                 "api_key": os.getenv("PINECONE_API_KEY"),
                 "environment": os.getenv("PINECONE_ENVIRONMENT", "us-west1-gcp"),
                 "index_name": os.getenv("PINECONE_INDEX_NAME", "rag-documents"),
-                "dimension": int(os.getenv("EMBEDDING_DIMENSION", "1536"))
+                "dimension": int(os.getenv("EMBEDDING_DIMENSION", "1536")),
             }
 
             self.vector_store = VectorStore(backend=vector_backend, **vector_config)
 
             # Initialize query processor
             self.query_processor = RAGQueryProcessor(
-                embedding_generator=self.embedding_generator,
-                vector_store=self.vector_store
+                embedding_generator=self.embedding_generator, vector_store=self.vector_store
             )
 
             self.initialized = True
@@ -95,7 +95,7 @@ class ProductionRAGService:
         question: str,
         top_k: int = 5,
         user_id: str = None,
-        user_context: Optional[Dict[str, Any]] = None
+        user_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Process a query with comprehensive logging and error handling.
@@ -126,8 +126,8 @@ class ProductionRAGService:
                     "query_id": query_id,
                     "user_id": user_id,
                     "question_length": len(question),
-                    "top_k": top_k
-                }
+                    "top_k": top_k,
+                },
             )
 
             # Validate input
@@ -143,16 +143,18 @@ class ProductionRAGService:
                     question=question,
                     top_k=top_k,
                     model=os.getenv("LLM_MODEL", "gpt-4.1"),
-                    max_context_length=int(os.getenv("MAX_CONTEXT_LENGTH", "8000"))
+                    max_context_length=int(os.getenv("MAX_CONTEXT_LENGTH", "8000")),
                 )
 
             # Add query tracking metadata
-            result['metadata'].update({
-                'query_id': query_id,
-                'user_id': user_id,
-                'processed_at': time.time(),
-                'version': '1.0'
-            })
+            result["metadata"].update(
+                {
+                    "query_id": query_id,
+                    "user_id": user_id,
+                    "processed_at": time.time(),
+                    "version": "1.0",
+                }
+            )
 
             processing_time = time.time() - start_time
 
@@ -162,15 +164,17 @@ class ProductionRAGService:
                     "query_id": query_id,
                     "user_id": user_id,
                     "processing_time": processing_time,
-                    "num_sources": len(result.get('sources', [])),
-                    "confidence": result.get('confidence', 0.0)
-                }
+                    "num_sources": len(result.get("sources", [])),
+                    "confidence": result.get("confidence", 0.0),
+                },
             )
 
             return result
 
         except ValueError as e:
-            logger.warning(f"Invalid query: {str(e)}", extra={"query_id": query_id, "user_id": user_id})
+            logger.warning(
+                f"Invalid query: {str(e)}", extra={"query_id": query_id, "user_id": user_id}
+            )
             raise
 
         except Exception as e:
@@ -182,9 +186,9 @@ class ProductionRAGService:
                     "user_id": user_id,
                     "error": str(e),
                     "error_type": type(e).__name__,
-                    "processing_time": processing_time
+                    "processing_time": processing_time,
                 },
-                exc_info=True
+                exc_info=True,
             )
             raise
 
@@ -204,44 +208,30 @@ class ProductionRAGService:
             # Check vector store
             try:
                 vector_healthy = self.vector_store.ping()
-                services['vector_store'] = {
-                    'healthy': vector_healthy,
-                    'backend': self.vector_store.backend
+                services["vector_store"] = {
+                    "healthy": vector_healthy,
+                    "backend": self.vector_store.backend,
                 }
             except Exception as e:
-                services['vector_store'] = {
-                    'healthy': False,
-                    'error': str(e)
-                }
+                services["vector_store"] = {"healthy": False, "error": str(e)}
 
             # Check embedding service (simple test)
             try:
                 test_embedding = self.embedding_generator.embed_query("test")
-                services['embedding_generator'] = {
-                    'healthy': len(test_embedding) > 0,
-                    'model': self.embedding_generator.model
+                services["embedding_generator"] = {
+                    "healthy": len(test_embedding) > 0,
+                    "model": self.embedding_generator.model,
                 }
             except Exception as e:
-                services['embedding_generator'] = {
-                    'healthy': False,
-                    'error': str(e)
-                }
+                services["embedding_generator"] = {"healthy": False, "error": str(e)}
 
             # Overall health
-            all_healthy = all(service.get('healthy', False) for service in services.values())
+            all_healthy = all(service.get("healthy", False) for service in services.values())
 
-            return {
-                'healthy': all_healthy,
-                'services': services,
-                'timestamp': time.time()
-            }
+            return {"healthy": all_healthy, "services": services, "timestamp": time.time()}
 
         except Exception as e:
-            return {
-                'healthy': False,
-                'error': str(e),
-                'timestamp': time.time()
-            }
+            return {"healthy": False, "error": str(e), "timestamp": time.time()}
 
     async def is_ready(self) -> bool:
         """Check if service is ready to receive traffic."""
@@ -259,7 +249,7 @@ class ProductionRAGService:
         user_id: str,
         satisfaction_score: int,
         feedback_text: Optional[str] = None,
-        helpful: Optional[bool] = None
+        helpful: Optional[bool] = None,
     ):
         """Store user feedback for analytics."""
         logger.info(
@@ -268,16 +258,13 @@ class ProductionRAGService:
                 "query_id": query_id,
                 "user_id": user_id,
                 "satisfaction_score": satisfaction_score,
-                "helpful": helpful
-            }
+                "helpful": helpful,
+            },
         )
         # TODO: Implement feedback storage
 
     async def queue_document_processing(
-        self,
-        file_content: bytes,
-        filename: str,
-        user_id: str
+        self, file_content: bytes, filename: str, user_id: str
     ) -> str:
         """Queue document for processing."""
         document_id = f"doc_{user_id}_{int(time.time())}"
@@ -288,13 +275,11 @@ class ProductionRAGService:
     async def get_document_status(self, document_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         """Get document processing status."""
         # TODO: Implement document status tracking
-        return {
-            "document_id": document_id,
-            "status": "completed",
-            "processed_at": time.time()
-        }
+        return {"document_id": document_id, "status": "completed", "processed_at": time.time()}
 
-    async def get_query_history(self, user_id: str, limit: int, offset: int) -> List[Dict[str, Any]]:
+    async def get_query_history(
+        self, user_id: str, limit: int, offset: int
+    ) -> List[Dict[str, Any]]:
         """Get user's query history."""
         # TODO: Implement query history storage and retrieval
         return []
@@ -302,11 +287,7 @@ class ProductionRAGService:
     async def get_system_stats(self) -> Dict[str, Any]:
         """Get system statistics."""
         # TODO: Implement system statistics
-        return {
-            "total_queries": 0,
-            "active_users": 0,
-            "average_response_time": 0.0
-        }
+        return {"total_queries": 0, "active_users": 0, "average_response_time": 0.0}
 
 
 def get_rag_service() -> ProductionRAGService:
@@ -323,7 +304,7 @@ def get_rate_limiter() -> RateLimiter:
     if _rate_limiter is None:
         _rate_limiter = RateLimiter(
             max_requests=int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "100")),
-            window_seconds=int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "3600"))
+            window_seconds=int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "3600")),
         )
     return _rate_limiter
 
@@ -332,9 +313,7 @@ def get_query_cache() -> QueryCache:
     """Get or create query cache instance."""
     global _query_cache
     if _query_cache is None:
-        _query_cache = QueryCache(
-            redis_url=os.getenv("REDIS_URL", "redis://localhost:6379")
-        )
+        _query_cache = QueryCache(redis_url=os.getenv("REDIS_URL", "redis://localhost:6379"))
     return _query_cache
 
 
@@ -357,18 +336,13 @@ def validate_api_key(credentials: HTTPAuthorizationCredentials = Depends(securit
     if not valid_api_keys or api_key not in valid_api_keys:
         logger.warning(f"Invalid API key attempted: {api_key[:10]}...")
         raise HTTPException(
-            status_code=401,
-            detail="Invalid API key",
-            headers={"WWW-Authenticate": "Bearer"}
+            status_code=401, detail="Invalid API key", headers={"WWW-Authenticate": "Bearer"}
         )
 
     return api_key
 
 
-def get_user_id(
-    request: Request,
-    x_user_id: Optional[str] = Header(None)
-) -> str:
+def get_user_id(request: Request, x_user_id: Optional[str] = Header(None)) -> str:
     """
     Extract user ID from request headers or generate anonymous ID.
 
@@ -388,6 +362,7 @@ def get_user_id(
 
     # Simple hash-based anonymous ID (not for security, just for tracking)
     import hashlib
+
     anonymous_id = hashlib.md5(f"{client_ip}:{user_agent}".encode()).hexdigest()[:16]
 
     return f"anon_{anonymous_id}"
@@ -404,11 +379,12 @@ def get_request_id(request: Request) -> str:
         Request identifier
     """
     # Check if request ID already exists
-    if hasattr(request.state, 'request_id'):
+    if hasattr(request.state, "request_id"):
         return request.state.request_id
 
     # Generate new request ID
     import uuid
+
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
 
