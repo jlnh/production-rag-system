@@ -124,6 +124,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+rag-env/
 ENV/
 env.bak/
 venv.bak/
@@ -213,3 +214,6 @@ notebooks/.ipynb_checkpoints/
 # Kubernetes
 kubeconfig
 *.kubeconfig
+
+# Claude.ai
+.claude/

@@ -19,9 +19,10 @@ The system supports multiple configuration methods in order of precedence:
 # OpenAI API Key (Required)
 OPENAI_API_KEY=your-openai-api-key-here
 
-# Pinecone Configuration (if using Pinecone)
+# Pinecone Configuration (v5.0+ - if using Pinecone)
 PINECONE_API_KEY=your-pinecone-api-key-here
-PINECONE_ENVIRONMENT=your-pinecone-environment
+PINECONE_CLOUD=aws  # Options: aws, gcp, azure
+PINECONE_REGION=us-east-1  # Your preferred region
 PINECONE_INDEX_NAME=rag-documents
 
 # Weaviate Configuration (if using Weaviate)

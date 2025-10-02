@@ -8,6 +8,7 @@ License: MIT
 """
 
 from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 import time
@@ -51,14 +52,11 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Security middleware
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Configure for production
-)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])  # Configure for production
 
 # CORS middleware
 app.add_middleware(
@@ -83,9 +81,7 @@ async def add_monitoring(request: Request, call_next):
     duration = time.time() - start_time
     REQUEST_DURATION.observe(duration)
     REQUEST_COUNT.labels(
-        method=request.method,
-        endpoint=request.url.path,
-        status_code=response.status_code
+        method=request.method, endpoint=request.url.path, status_code=response.status_code
     ).inc()
 
     # Add timing header
@@ -127,20 +123,16 @@ async def health_check():
                 "status": "healthy",
                 "timestamp": time.time(),
                 "version": "1.0.0",
-                "services": health_status["services"]
+                "services": health_status["services"],
             }
         else:
             raise HTTPException(
-                status_code=503,
-                detail=f"Service unhealthy: {health_status['error']}"
+                status_code=503, detail=f"Service unhealthy: {health_status['error']}"
             )
 
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        raise HTTPException(
-            status_code=503,
-            detail=f"Health check failed: {str(e)}"
-        )
+        raise HTTPException(status_code=503, detail=f"Health check failed: {str(e)}")
 
 
 # Readiness check for Kubernetes
@@ -189,10 +181,8 @@ async def get_metrics():
     """
     try:
         from prometheus_client import generate_latest
-        return Response(
-            content=generate_latest(),
-            media_type="text/plain"
-        )
+
+        return Response(content=generate_latest(), media_type="text/plain")
     except Exception as e:
         logger.error(f"Failed to generate metrics: {str(e)}")
         raise HTTPException(status_code=500, detail="Metrics unavailable")
@@ -222,8 +212,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={
             "error": "Internal server error",
             "message": "An unexpected error occurred",
-            "request_id": getattr(request.state, 'request_id', 'unknown')
-        }
+            "request_id": getattr(request.state, "request_id", "unknown"),
+        },
     )
 
 
@@ -246,9 +236,9 @@ async def rate_limit_exception_handler(request: Request, exc: HTTPException):
             content={
                 "error": "Rate limit exceeded",
                 "message": "Too many requests. Please try again later.",
-                "retry_after": 60
+                "retry_after": 60,
             },
-            headers={"Retry-After": "60"}
+            headers={"Retry-After": "60"},
         )
 
     # Re-raise other HTTP exceptions
@@ -259,10 +249,4 @@ if __name__ == "__main__":
     import uvicorn
 
     # Development server
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

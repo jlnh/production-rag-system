@@ -34,13 +34,12 @@ python -m venv rag-env
 source rag-env/bin/activate  # Linux/Mac
 # rag-env\Scripts\activate    # Windows
 
-# Install dependencies
-pip install -r requirements.txt
+# Install the package in editable mode (includes all dependencies)
 pip install -e .
 
-# Setup environment
+# Setup environment variables
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your API keys (OPENAI_API_KEY and PINECONE_API_KEY are required)
 ```
 
 ### Basic Usage
@@ -76,6 +75,37 @@ python examples/module2_hybrid_search.py
 python examples/module3_production_api.py
 ```
 
+### Required Configuration
+
+Before running the examples, ensure you have:
+
+1. **API Keys** set in `.env`:
+   - `OPENAI_API_KEY` - Required for embeddings and LLM
+   - `PINECONE_API_KEY` - Required for vector storage (or use ChromaDB/Weaviate)
+
+#### Getting Your Pinecone API Key
+
+To get your `PINECONE_API_KEY`:
+
+1. Go to [https://pinecone.io](https://pinecone.io) and log in (or sign up for a free account)
+2. Select your project in the Pinecone console
+3. Navigate to the **API Keys** tab in your project dashboard
+4. Click **Create API Key**, give it a name, and set permissions (typically "All" for Starter plan)
+5. Copy the generated API key immediately and save it securely (you won't be able to view it again)
+6. Add it to your `.env` file: `PINECONE_API_KEY=your-pinecone-api-key-here`
+
+2. **Optional Services** (for full production features):
+   - **Redis** - For caching and rate limiting
+     ```bash
+     # Using Docker
+     docker run -d -p 6379:6379 redis:latest
+     ```
+
+3. **Vector Store Setup**:
+   - **Pinecone**: Create an index in your Pinecone dashboard
+   - **ChromaDB**: No setup needed (local storage)
+   - **Weaviate**: Run Weaviate instance locally or in cloud
+
 ## 🧪 Testing
 
 ```bash
@@ -97,11 +127,29 @@ uvicorn rag_system.api.main:app --host 0.0.0.0 --port 8000
 
 ## 📖 Documentation
 
-- **[Installation Guide](docs/installation.md)** - Detailed setup instructions
-- **[Configuration](docs/configuration.md)** - Environment and config options
-- **[Examples](docs/examples.md)** - Usage examples and tutorials
-- **[Deployment](docs/deployment.md)** - Production deployment guide
-- **[Architecture](docs/architecture.md)** - System design and components
+### Quick Links
+- **[Installation Guide](docs/installation.md)** - Complete installation with Docker, venv, conda, and Poetry
+- **[Configuration](docs/configuration.md)** - All environment variables and settings explained
+- **[Examples](docs/examples.md)** - Code examples and Jupyter notebooks
+- **[Deployment](docs/deployment.md)** - Production deployment with Docker, Kubernetes, AWS
+- **[Architecture](docs/architecture.md)** - System design, components, and data flow
+
+### Key Documentation Topics
+
+**Getting Started:**
+- [Python Environment Setup](docs/installation.md#python-environment-setup)
+- [Docker Quick Start](docs/installation.md#quick-start-with-docker)
+- [API Keys & Configuration](docs/installation.md#environment-configuration)
+
+**Vector Stores:**
+- [Pinecone Setup](docs/installation.md#pinecone) (v5.0+ with updated API)
+- [Weaviate Setup](docs/installation.md#weaviate)
+- [ChromaDB Setup](docs/installation.md#chromadb-local)
+
+**Production:**
+- [Redis Configuration](docs/installation.md#redis-installation)
+- [API Deployment](docs/deployment.md)
+- [Monitoring & Metrics](docs/configuration.md#monitoring-configuration)
 
 ## 🛠️ Development
 
@@ -132,6 +180,30 @@ pytest                    # Run tests
 3. Add tests for new functionality
 4. Ensure all tests pass
 5. Submit a pull request
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Import Errors / Circular Imports**
+```bash
+# Reinstall in editable mode
+pip install -e .
+```
+
+**Pinecone API Errors**
+- Ensure you're using `pinecone>=5.0.0` (not the old `pinecone-client`)
+- Update your `.env` with valid `PINECONE_API_KEY`
+- Remove `PINECONE_ENVIRONMENT` from `.env` (no longer needed in v5+)
+
+**Redis Connection Errors**
+- Redis is optional for development
+- Start Redis: `docker run -d -p 6379:6379 redis:latest`
+- Or set `CACHE_ENABLED=false` and `RATE_LIMIT_ENABLED=false` in `.env`
+
+**OpenAI Authentication Errors**
+- Set valid `OPENAI_API_KEY` in `.env`
+- Check your API key at https://platform.openai.com/api-keys
 
 ## 📄 License
 

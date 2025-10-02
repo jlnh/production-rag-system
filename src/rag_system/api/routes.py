@@ -19,7 +19,7 @@ from .dependencies import (
     get_rate_limiter,
     get_user_id,
     get_query_cache,
-    validate_api_key
+    validate_api_key,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,20 +31,24 @@ router = APIRouter()
 # Request/Response models
 class QueryRequest(BaseModel):
     """Request model for RAG queries."""
+
     question: str = Field(..., min_length=1, max_length=1000, description="User's question")
     top_k: int = Field(default=5, ge=1, le=20, description="Number of documents to retrieve")
     include_sources: bool = Field(default=True, description="Include source documents in response")
-    user_context: Optional[Dict[str, Any]] = Field(default=None, description="Optional user context")
+    user_context: Optional[Dict[str, Any]] = Field(
+        default=None, description="Optional user context"
+    )
 
-    @validator('question')
+    @validator("question")
     def validate_question(cls, v):
         if not v.strip():
-            raise ValueError('Question cannot be empty or whitespace only')
+            raise ValueError("Question cannot be empty or whitespace only")
         return v.strip()
 
 
 class Source(BaseModel):
     """Source document model."""
+
     id: str
     score: float
     preview: str
@@ -54,6 +58,7 @@ class Source(BaseModel):
 
 class QueryResponse(BaseModel):
     """Response model for RAG queries."""
+
     answer: str
     sources: List[Source]
     confidence: float = Field(ge=0.0, le=1.0)
@@ -63,6 +68,7 @@ class QueryResponse(BaseModel):
 
 class FeedbackRequest(BaseModel):
     """Request model for user feedback."""
+
     query_id: str
     satisfaction_score: int = Field(ge=1, le=5, description="Satisfaction score (1-5)")
     feedback_text: Optional[str] = Field(default=None, max_length=500)
@@ -71,6 +77,7 @@ class FeedbackRequest(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Error response model."""
+
     error: str
     message: str
     request_id: Optional[str] = None
@@ -82,10 +89,10 @@ async def query_endpoint(
     request: QueryRequest,
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_user_id),
-    rag_service = Depends(get_rag_service),
-    rate_limiter = Depends(get_rate_limiter),
-    query_cache = Depends(get_query_cache),
-    api_key: str = Depends(validate_api_key)
+    rag_service=Depends(get_rag_service),
+    rate_limiter=Depends(get_rate_limiter),
+    query_cache=Depends(get_query_cache),
+    api_key: str = Depends(validate_api_key),
 ):
     """
     Process a RAG query and return an answer with sources.
@@ -110,27 +117,21 @@ async def query_endpoint(
     # Rate limiting check
     if not rate_limiter.allow_request(user_id):
         logger.warning(f"Rate limit exceeded for user {user_id}")
-        raise HTTPException(
-            status_code=429,
-            detail="Rate limit exceeded. Please try again later."
-        )
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
 
     try:
         # Check cache first
         cache_key = query_cache.get_cache_key(
             request.question,
-            filters={
-                'top_k': request.top_k,
-                'include_sources': request.include_sources
-            },
-            user_id=user_id
+            filters={"top_k": request.top_k, "include_sources": request.include_sources},
+            user_id=user_id,
         )
 
         cached_result = query_cache.get_cached_result(cache_key)
         if cached_result:
             logger.info(f"Cache hit for user {user_id}")
-            cached_result['metadata']['cached'] = True
-            cached_result['metadata']['cache_key'] = cache_key
+            cached_result["metadata"]["cached"] = True
+            cached_result["metadata"]["cache_key"] = cache_key
             return QueryResponse(**cached_result)
 
         # Process query
@@ -140,19 +141,19 @@ async def query_endpoint(
             question=request.question,
             top_k=request.top_k,
             user_id=user_id,
-            user_context=request.user_context
+            user_context=request.user_context,
         )
 
         # Format response
         sources = []
         if request.include_sources:
-            for source_data in result.get('sources', []):
+            for source_data in result.get("sources", []):
                 source = Source(
-                    id=source_data['id'],
-                    score=source_data['score'],
-                    preview=source_data['preview'],
-                    source_file=source_data.get('source_file'),
-                    chunk_id=source_data.get('chunk_id')
+                    id=source_data["id"],
+                    score=source_data["score"],
+                    preview=source_data["preview"],
+                    source_file=source_data.get("source_file"),
+                    chunk_id=source_data.get("chunk_id"),
                 )
                 sources.append(source)
 
@@ -161,30 +162,25 @@ async def query_endpoint(
 
         # Create response
         response = QueryResponse(
-            answer=result['answer'],
+            answer=result["answer"],
             sources=sources,
-            confidence=result['confidence'],
+            confidence=result["confidence"],
             response_time=response_time,
             metadata={
-                **result['metadata'],
-                'user_id': user_id,
-                'cached': False,
-                'api_version': '1.0'
-            }
+                **result["metadata"],
+                "user_id": user_id,
+                "cached": False,
+                "api_version": "1.0",
+            },
         )
 
         # Cache result for future requests
         background_tasks.add_task(
-            query_cache.cache_result,
-            cache_key,
-            response.dict(),
-            ttl=3600  # 1 hour
+            query_cache.cache_result, cache_key, response.dict(), ttl=3600  # 1 hour
         )
 
         # Log successful query
-        logger.info(
-            f"Query processed successfully for user {user_id} in {response_time:.2f}s"
-        )
+        logger.info(f"Query processed successfully for user {user_id} in {response_time:.2f}s")
 
         return response
 
@@ -196,7 +192,7 @@ async def query_endpoint(
         logger.error(f"Query processing failed for user {user_id}: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="An error occurred while processing your query. Please try again."
+            detail="An error occurred while processing your query. Please try again.",
         )
 
 
@@ -206,8 +202,8 @@ async def submit_feedback(
     feedback: FeedbackRequest,
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_user_id),
-    rag_service = Depends(get_rag_service),
-    api_key: str = Depends(validate_api_key)
+    rag_service=Depends(get_rag_service),
+    api_key: str = Depends(validate_api_key),
 ):
     """
     Submit user feedback for a query.
@@ -233,22 +229,16 @@ async def submit_feedback(
             user_id=user_id,
             satisfaction_score=feedback.satisfaction_score,
             feedback_text=feedback.feedback_text,
-            helpful=feedback.helpful
+            helpful=feedback.helpful,
         )
 
         logger.info(f"Feedback submitted by user {user_id} for query {feedback.query_id}")
 
-        return {
-            "message": "Feedback submitted successfully",
-            "query_id": feedback.query_id
-        }
+        return {"message": "Feedback submitted successfully", "query_id": feedback.query_id}
 
     except Exception as e:
         logger.error(f"Failed to submit feedback: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to submit feedback. Please try again."
-        )
+        raise HTTPException(status_code=500, detail="Failed to submit feedback. Please try again.")
 
 
 # Document upload endpoint
@@ -257,8 +247,8 @@ async def upload_document(
     request: Request,
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_user_id),
-    rag_service = Depends(get_rag_service),
-    api_key: str = Depends(validate_api_key)
+    rag_service=Depends(get_rag_service),
+    api_key: str = Depends(validate_api_key),
 ):
     """
     Upload and process a document for the RAG system.
@@ -288,18 +278,16 @@ async def upload_document(
         if file.size > 10 * 1024 * 1024:  # 10MB limit
             raise HTTPException(status_code=400, detail="File too large (max 10MB)")
 
-        allowed_types = ['.pdf', '.docx', '.txt', '.md']
+        allowed_types = [".pdf", ".docx", ".txt", ".md"]
         if not any(file.filename.lower().endswith(ext) for ext in allowed_types):
             raise HTTPException(
                 status_code=400,
-                detail=f"Unsupported file type. Allowed: {', '.join(allowed_types)}"
+                detail=f"Unsupported file type. Allowed: {', '.join(allowed_types)}",
             )
 
         # Process document asynchronously
         document_id = await rag_service.queue_document_processing(
-            file_content=await file.read(),
-            filename=file.filename,
-            user_id=user_id
+            file_content=await file.read(), filename=file.filename, user_id=user_id
         )
 
         logger.info(f"Document upload queued for user {user_id}: {file.filename}")
@@ -308,17 +296,14 @@ async def upload_document(
             "message": "Document uploaded successfully",
             "document_id": document_id,
             "filename": file.filename,
-            "status": "processing"
+            "status": "processing",
         }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Document upload failed: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to upload document. Please try again."
-        )
+        raise HTTPException(status_code=500, detail="Failed to upload document. Please try again.")
 
 
 # Document status endpoint
@@ -326,8 +311,8 @@ async def upload_document(
 async def get_document_status(
     document_id: str,
     user_id: str = Depends(get_user_id),
-    rag_service = Depends(get_rag_service),
-    api_key: str = Depends(validate_api_key)
+    rag_service=Depends(get_rag_service),
+    api_key: str = Depends(validate_api_key),
 ):
     """
     Get the processing status of a document.
@@ -356,10 +341,7 @@ async def get_document_status(
         raise
     except Exception as e:
         logger.error(f"Failed to get document status: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to retrieve document status"
-        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve document status")
 
 
 # User query history endpoint
@@ -368,8 +350,8 @@ async def get_query_history(
     limit: int = 10,
     offset: int = 0,
     user_id: str = Depends(get_user_id),
-    rag_service = Depends(get_rag_service),
-    api_key: str = Depends(validate_api_key)
+    rag_service=Depends(get_rag_service),
+    api_key: str = Depends(validate_api_key),
 ):
     """
     Get user's query history.
@@ -391,32 +373,19 @@ async def get_query_history(
         raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
 
     try:
-        history = await rag_service.get_query_history(
-            user_id=user_id,
-            limit=limit,
-            offset=offset
-        )
+        history = await rag_service.get_query_history(user_id=user_id, limit=limit, offset=offset)
 
-        return {
-            "queries": history,
-            "limit": limit,
-            "offset": offset,
-            "total": len(history)
-        }
+        return {"queries": history, "limit": limit, "offset": offset, "total": len(history)}
 
     except Exception as e:
         logger.error(f"Failed to get query history: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to retrieve query history"
-        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve query history")
 
 
 # System statistics endpoint (admin only)
 @router.get("/admin/stats", tags=["Admin"])
 async def get_system_stats(
-    rag_service = Depends(get_rag_service),
-    api_key: str = Depends(validate_api_key)
+    rag_service=Depends(get_rag_service), api_key: str = Depends(validate_api_key)
 ):
     """
     Get system statistics (admin endpoint).
@@ -441,7 +410,4 @@ async def get_system_stats(
 
     except Exception as e:
         logger.error(f"Failed to get system stats: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to retrieve system statistics"
-        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve system statistics")

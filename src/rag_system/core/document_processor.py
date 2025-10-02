@@ -53,12 +53,12 @@ class DocumentProcessor:
         file_ext = file_path.suffix.lower()
 
         try:
-            if file_ext == '.pdf':
+            if file_ext == ".pdf":
                 text = self.parse_pdf(file_path)
-            elif file_ext == '.docx':
+            elif file_ext == ".docx":
                 text = self.parse_docx(file_path)
-            elif file_ext in ['.txt', '.md']:
-                text = file_path.read_text(encoding='utf-8')
+            elif file_ext in [".txt", ".md"]:
+                text = file_path.read_text(encoding="utf-8")
             else:
                 raise ValueError(f"Unsupported file format: {file_ext}")
 
@@ -82,7 +82,7 @@ class DocumentProcessor:
         try:
             import PyPDF2
 
-            with open(file_path, 'rb') as file:
+            with open(file_path, "rb") as file:
                 pdf_reader = PyPDF2.PdfReader(file)
                 text = ""
 
@@ -90,13 +90,17 @@ class DocumentProcessor:
                     try:
                         text += page.extract_text() + "\n"
                     except Exception as e:
-                        logger.warning(f"Error extracting page {page_num} from {file_path}: {str(e)}")
+                        logger.warning(
+                            f"Error extracting page {page_num} from {file_path}: {str(e)}"
+                        )
                         continue
 
                 return text.strip()
 
         except ImportError:
-            raise ImportError("PyPDF2 is required for PDF processing. Install with: pip install PyPDF2")
+            raise ImportError(
+                "PyPDF2 is required for PDF processing. Install with: pip install PyPDF2"
+            )
         except Exception as e:
             logger.error(f"Error parsing PDF {file_path}: {str(e)}")
             raise
@@ -124,7 +128,9 @@ class DocumentProcessor:
             return "\n".join(text)
 
         except ImportError:
-            raise ImportError("python-docx is required for DOCX processing. Install with: pip install python-docx")
+            raise ImportError(
+                "python-docx is required for DOCX processing. Install with: pip install python-docx"
+            )
         except Exception as e:
             logger.error(f"Error parsing DOCX {file_path}: {str(e)}")
             raise
@@ -148,18 +154,18 @@ class DocumentProcessor:
         chunks = []
 
         for i in range(0, len(words), self.chunk_size - self.overlap):
-            chunk_words = words[i:i + self.chunk_size]
-            chunk_content = ' '.join(chunk_words)
+            chunk_words = words[i : i + self.chunk_size]
+            chunk_content = " ".join(chunk_words)
 
             chunk = {
-                'content': chunk_content,
-                'metadata': {
-                    'source': source_path,
-                    'chunk_id': i // (self.chunk_size - self.overlap),
-                    'start_word': i,
-                    'end_word': i + len(chunk_words),
-                    'word_count': len(chunk_words)
-                }
+                "content": chunk_content,
+                "metadata": {
+                    "source": source_path,
+                    "chunk_id": i // (self.chunk_size - self.overlap),
+                    "start_word": i,
+                    "end_word": i + len(chunk_words),
+                    "word_count": len(chunk_words),
+                },
             }
             chunks.append(chunk)
 

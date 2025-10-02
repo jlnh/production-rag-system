@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class QualityThreshold:
     """Quality threshold configuration."""
+
     metric_name: str
     min_value: float
     max_value: Optional[float] = None
@@ -31,6 +32,7 @@ class QualityThreshold:
 @dataclass
 class QualityTestResult:
     """Result of a quality test."""
+
     test_name: str
     passed: bool
     score: float
@@ -42,6 +44,7 @@ class QualityTestResult:
 @dataclass
 class QualityGateResult:
     """Overall quality gate result."""
+
     passed: bool
     total_tests: int
     passed_tests: int
@@ -60,9 +63,7 @@ class QualityGate:
     """
 
     def __init__(
-        self,
-        test_queries_path: Optional[str] = None,
-        thresholds_config_path: Optional[str] = None
+        self, test_queries_path: Optional[str] = None, thresholds_config_path: Optional[str] = None
     ):
         """
         Initialize the quality gate.
@@ -80,15 +81,17 @@ class QualityGate:
         """Load quality thresholds from configuration."""
         if self.thresholds_config_path and Path(self.thresholds_config_path).exists():
             try:
-                with open(self.thresholds_config_path, 'r', encoding='utf-8') as f:
+                with open(self.thresholds_config_path, "r", encoding="utf-8") as f:
                     config = json.load(f)
 
                 thresholds = {}
-                for threshold_config in config.get('thresholds', []):
+                for threshold_config in config.get("thresholds", []):
                     threshold = QualityThreshold(**threshold_config)
                     thresholds[threshold.metric_name] = threshold
 
-                logger.info(f"Loaded {len(thresholds)} quality thresholds from {self.thresholds_config_path}")
+                logger.info(
+                    f"Loaded {len(thresholds)} quality thresholds from {self.thresholds_config_path}"
+                )
                 return thresholds
 
             except Exception as e:
@@ -100,32 +103,22 @@ class QualityGate:
     def _get_default_thresholds(self) -> Dict[str, QualityThreshold]:
         """Get default quality thresholds."""
         return {
-            'avg_precision@5': QualityThreshold(
-                metric_name='avg_precision@5',
-                min_value=0.7,
-                critical=True
+            "avg_precision@5": QualityThreshold(
+                metric_name="avg_precision@5", min_value=0.7, critical=True
             ),
-            'avg_recall@5': QualityThreshold(
-                metric_name='avg_recall@5',
-                min_value=0.6,
-                critical=True
+            "avg_recall@5": QualityThreshold(
+                metric_name="avg_recall@5", min_value=0.6, critical=True
             ),
-            'avg_mrr': QualityThreshold(
-                metric_name='avg_mrr',
-                min_value=0.75,
-                critical=True
-            ),
-            'avg_response_time': QualityThreshold(
-                metric_name='avg_response_time',
+            "avg_mrr": QualityThreshold(metric_name="avg_mrr", min_value=0.75, critical=True),
+            "avg_response_time": QualityThreshold(
+                metric_name="avg_response_time",
                 min_value=0.0,
                 max_value=3.0,  # Max 3 seconds
-                critical=False
+                critical=False,
             ),
-            'system_availability': QualityThreshold(
-                metric_name='system_availability',
-                min_value=0.99,
-                critical=True
-            )
+            "system_availability": QualityThreshold(
+                metric_name="system_availability", min_value=0.99, critical=True
+            ),
         }
 
     def run_retrieval_tests(self, retriever) -> QualityTestResult:
@@ -161,9 +154,9 @@ class QualityGate:
                         passed_metrics += 1
                     else:
                         failed_details[metric_name] = {
-                            'value': value,
-                            'threshold': asdict(threshold),
-                            'passed': False
+                            "value": value,
+                            "threshold": asdict(threshold),
+                            "passed": False,
                         }
 
             execution_time = time.time() - start_time
@@ -176,15 +169,17 @@ class QualityGate:
                 score=overall_score,
                 threshold=QualityThreshold("overall", 1.0),  # All must pass
                 details={
-                    'evaluation_results': evaluation_results,
-                    'passed_metrics': passed_metrics,
-                    'total_metrics': total_metrics,
-                    'failed_metrics': failed_details
+                    "evaluation_results": evaluation_results,
+                    "passed_metrics": passed_metrics,
+                    "total_metrics": total_metrics,
+                    "failed_metrics": failed_details,
                 },
-                execution_time=execution_time
+                execution_time=execution_time,
             )
 
-            logger.info(f"Retrieval tests completed: {passed_metrics}/{total_metrics} metrics passed")
+            logger.info(
+                f"Retrieval tests completed: {passed_metrics}/{total_metrics} metrics passed"
+            )
             return result
 
         except Exception as e:
@@ -196,11 +191,11 @@ class QualityGate:
                 passed=False,
                 score=0.0,
                 threshold=QualityThreshold("overall", 1.0),
-                details={'error': str(e)},
-                execution_time=execution_time
+                details={"error": str(e)},
+                execution_time=execution_time,
             )
 
-    def run_performance_tests(self, rag_service) -> QualityTestResult:
+    async def run_performance_tests(self, rag_service) -> QualityTestResult:
         """
         Run performance tests.
 
@@ -221,7 +216,7 @@ class QualityGate:
                 "How does natural language processing work?",
                 "Explain deep learning algorithms",
                 "What are the benefits of cloud computing?",
-                "How to implement REST APIs?"
+                "How to implement REST APIs?",
             ]
 
             response_times = []
@@ -230,7 +225,7 @@ class QualityGate:
             for query in test_queries:
                 query_start = time.time()
                 try:
-                    result = rag_service.process_query(query, top_k=5)
+                    result = await rag_service.process_query(query, top_k=5)
                     response_time = time.time() - query_start
                     response_times.append(response_time)
                     successful_queries += 1
@@ -238,17 +233,21 @@ class QualityGate:
                     logger.warning(f"Performance test query failed: {str(e)}")
 
             # Calculate metrics
-            avg_response_time = sum(response_times) / len(response_times) if response_times else float('inf')
+            avg_response_time = (
+                sum(response_times) / len(response_times) if response_times else float("inf")
+            )
             success_rate = successful_queries / len(test_queries)
 
             # Check thresholds
-            response_time_threshold = self._thresholds.get('avg_response_time')
+            response_time_threshold = self._thresholds.get("avg_response_time")
             response_time_passed = True
 
             if response_time_threshold:
-                response_time_passed = self._check_threshold(avg_response_time, response_time_threshold)
+                response_time_passed = self._check_threshold(
+                    avg_response_time, response_time_threshold
+                )
 
-            success_rate_threshold = self._thresholds.get('system_availability')
+            success_rate_threshold = self._thresholds.get("system_availability")
             success_rate_passed = True
 
             if success_rate_threshold:
@@ -263,18 +262,20 @@ class QualityGate:
                 score=min(success_rate, 1.0 if response_time_passed else 0.5),
                 threshold=QualityThreshold("performance", 0.8),
                 details={
-                    'avg_response_time': avg_response_time,
-                    'response_times': response_times,
-                    'success_rate': success_rate,
-                    'successful_queries': successful_queries,
-                    'total_queries': len(test_queries),
-                    'response_time_passed': response_time_passed,
-                    'success_rate_passed': success_rate_passed
+                    "avg_response_time": avg_response_time,
+                    "response_times": response_times,
+                    "success_rate": success_rate,
+                    "successful_queries": successful_queries,
+                    "total_queries": len(test_queries),
+                    "response_time_passed": response_time_passed,
+                    "success_rate_passed": success_rate_passed,
                 },
-                execution_time=execution_time
+                execution_time=execution_time,
             )
 
-            logger.info(f"Performance tests completed: avg response time {avg_response_time:.2f}s, success rate {success_rate:.2%}")
+            logger.info(
+                f"Performance tests completed: avg response time {avg_response_time:.2f}s, success rate {success_rate:.2%}"
+            )
             return result
 
         except Exception as e:
@@ -286,11 +287,11 @@ class QualityGate:
                 passed=False,
                 score=0.0,
                 threshold=QualityThreshold("performance", 0.8),
-                details={'error': str(e)},
-                execution_time=execution_time
+                details={"error": str(e)},
+                execution_time=execution_time,
             )
 
-    def run_health_tests(self, rag_service) -> QualityTestResult:
+    async def run_health_tests(self, rag_service) -> QualityTestResult:
         """
         Run system health tests.
 
@@ -306,15 +307,15 @@ class QualityGate:
             logger.info("Running health tests...")
 
             # Check system health
-            health_result = rag_service.health_check()
+            health_result = await rag_service.health_check()
 
             # Verify all components are healthy
-            overall_healthy = health_result.get('healthy', False)
-            services = health_result.get('services', {})
+            overall_healthy = health_result.get("healthy", False)
+            services = health_result.get("services", {})
 
             unhealthy_services = []
             for service_name, service_status in services.items():
-                if not service_status.get('healthy', False):
+                if not service_status.get("healthy", False):
                     unhealthy_services.append(service_name)
 
             test_passed = overall_healthy and len(unhealthy_services) == 0
@@ -328,12 +329,12 @@ class QualityGate:
                 score=score,
                 threshold=QualityThreshold("health", 1.0),
                 details={
-                    'overall_healthy': overall_healthy,
-                    'services': services,
-                    'unhealthy_services': unhealthy_services,
-                    'health_check_response': health_result
+                    "overall_healthy": overall_healthy,
+                    "services": services,
+                    "unhealthy_services": unhealthy_services,
+                    "health_check_response": health_result,
                 },
-                execution_time=execution_time
+                execution_time=execution_time,
             )
 
             logger.info(f"Health tests completed: {'PASSED' if test_passed else 'FAILED'}")
@@ -348,8 +349,8 @@ class QualityGate:
                 passed=False,
                 score=0.0,
                 threshold=QualityThreshold("health", 1.0),
-                details={'error': str(e)},
-                execution_time=execution_time
+                details={"error": str(e)},
+                execution_time=execution_time,
             )
 
     def run_all_tests(self, retriever, rag_service) -> QualityGateResult:
@@ -373,7 +374,7 @@ class QualityGate:
         test_suites = [
             ("retrieval", lambda: self.run_retrieval_tests(retriever)),
             ("performance", lambda: self.run_performance_tests(rag_service)),
-            ("health", lambda: self.run_health_tests(rag_service))
+            ("health", lambda: self.run_health_tests(rag_service)),
         ]
 
         for test_name, test_func in test_suites:
@@ -392,8 +393,8 @@ class QualityGate:
                     passed=False,
                     score=0.0,
                     threshold=QualityThreshold(test_name, 1.0),
-                    details={'error': str(e)},
-                    execution_time=0.0
+                    details={"error": str(e)},
+                    execution_time=0.0,
                 )
                 results.append(failed_result)
 
@@ -402,10 +403,7 @@ class QualityGate:
         failed_tests = len(results) - passed_tests
 
         # Count critical failures
-        critical_failures = sum(
-            1 for r in results
-            if not r.passed and r.threshold.critical
-        )
+        critical_failures = sum(1 for r in results if not r.passed and r.threshold.critical)
 
         # Quality gate passes if all critical tests pass
         overall_passed = critical_failures == 0
@@ -421,10 +419,10 @@ class QualityGate:
             results=results,
             execution_time=execution_time,
             metadata={
-                'thresholds_used': len(self._thresholds),
-                'test_queries_available': len(self.evaluator.test_queries),
-                'timestamp': time.time()
-            }
+                "thresholds_used": len(self._thresholds),
+                "test_queries_available": len(self.evaluator.test_queries),
+                "timestamp": time.time(),
+            },
         )
 
         # Log final result
@@ -469,7 +467,7 @@ class QualityGate:
             # Convert to dictionary for JSON serialization
             result_dict = asdict(result)
 
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(result_dict, f, indent=2, default=str)
 
             logger.info(f"Quality gate results saved to {output_path}")
@@ -499,31 +497,35 @@ class QualityGate:
                 f"- Execution time: {result.execution_time:.2f} seconds",
                 "",
                 "## Test Results",
-                ""
+                "",
             ]
 
             for test_result in result.results:
                 status = "✅ PASSED" if test_result.passed else "❌ FAILED"
-                report_lines.extend([
-                    f"### {test_result.test_name.title()} Tests - {status}",
-                    f"- Score: {test_result.score:.3f}",
-                    f"- Execution time: {test_result.execution_time:.2f} seconds",
-                    f"- Critical: {'Yes' if test_result.threshold.critical else 'No'}",
-                    ""
-                ])
+                report_lines.extend(
+                    [
+                        f"### {test_result.test_name.title()} Tests - {status}",
+                        f"- Score: {test_result.score:.3f}",
+                        f"- Execution time: {test_result.execution_time:.2f} seconds",
+                        f"- Critical: {'Yes' if test_result.threshold.critical else 'No'}",
+                        "",
+                    ]
+                )
 
                 # Add details if test failed
                 if not test_result.passed:
-                    report_lines.extend([
-                        "**Failure Details:**",
-                        f"```json",
-                        json.dumps(test_result.details, indent=2, default=str),
-                        "```",
-                        ""
-                    ])
+                    report_lines.extend(
+                        [
+                            "**Failure Details:**",
+                            f"```json",
+                            json.dumps(test_result.details, indent=2, default=str),
+                            "```",
+                            "",
+                        ]
+                    )
 
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(report_lines))
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(report_lines))
 
             logger.info(f"Quality gate report saved to {output_path}")
 
@@ -548,7 +550,7 @@ class QualityGate:
             Dictionary with threshold information
         """
         return {
-            'total_thresholds': len(self._thresholds),
-            'critical_thresholds': sum(1 for t in self._thresholds.values() if t.critical),
-            'thresholds': {name: asdict(threshold) for name, threshold in self._thresholds.items()}
+            "total_thresholds": len(self._thresholds),
+            "critical_thresholds": sum(1 for t in self._thresholds.values() if t.critical),
+            "thresholds": {name: asdict(threshold) for name, threshold in self._thresholds.items()},
         }

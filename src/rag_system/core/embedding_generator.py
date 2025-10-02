@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     # dotenv is optional, environment variables can still be set manually
@@ -50,6 +51,7 @@ class EmbeddingGenerator:
         if self._client is None:
             try:
                 import openai
+
                 self._client = openai.OpenAI()
             except ImportError:
                 raise ImportError("OpenAI library is required. Install with: pip install openai")
@@ -74,7 +76,7 @@ class EmbeddingGenerator:
 
         # Validate chunk format
         for i, chunk in enumerate(chunks):
-            if 'content' not in chunk:
+            if "content" not in chunk:
                 raise ValueError(f"Chunk {i} missing 'content' field")
 
         logger.info(f"Generating embeddings for {len(chunks)} chunks")
@@ -82,7 +84,7 @@ class EmbeddingGenerator:
 
         try:
             for i in range(0, len(chunks), self.batch_size):
-                batch = chunks[i:i + self.batch_size]
+                batch = chunks[i : i + self.batch_size]
                 self._process_batch(batch)
 
                 # Log progress for large sets
@@ -106,23 +108,20 @@ class EmbeddingGenerator:
         Args:
             batch: List of chunk dictionaries to process
         """
-        texts = [chunk['content'] for chunk in batch]
+        texts = [chunk["content"] for chunk in batch]
 
         try:
-            response = self.client.embeddings.create(
-                input=texts,
-                model=self.model
-            )
+            response = self.client.embeddings.create(input=texts, model=self.model)
 
             # Add embeddings to chunks
             for chunk, embedding_data in zip(batch, response.data):
-                chunk['embedding'] = embedding_data.embedding
+                chunk["embedding"] = embedding_data.embedding
 
         except Exception as e:
             logger.error(f"Error processing batch: {str(e)}")
             # Add None embeddings to maintain consistency
             for chunk in batch:
-                chunk['embedding'] = None
+                chunk["embedding"] = None
             raise
 
     async def generate_embeddings_async(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -141,17 +140,13 @@ class EmbeddingGenerator:
         logger.info(f"Generating embeddings asynchronously for {len(chunks)} chunks")
 
         # Split into batches
-        batches = [
-            chunks[i:i + self.batch_size]
-            for i in range(0, len(chunks), self.batch_size)
-        ]
+        batches = [chunks[i : i + self.batch_size] for i in range(0, len(chunks), self.batch_size)]
 
         # Process batches concurrently
         with ThreadPoolExecutor(max_workers=3) as executor:
             loop = asyncio.get_event_loop()
             tasks = [
-                loop.run_in_executor(executor, self._process_batch, batch)
-                for batch in batches
+                loop.run_in_executor(executor, self._process_batch, batch) for batch in batches
             ]
 
             await asyncio.gather(*tasks)
@@ -175,10 +170,7 @@ class EmbeddingGenerator:
             raise ValueError("Query cannot be empty")
 
         try:
-            response = self.client.embeddings.create(
-                input=[query],
-                model=self.model
-            )
+            response = self.client.embeddings.create(input=[query], model=self.model)
 
             return response.data[0].embedding
 
@@ -197,15 +189,15 @@ class EmbeddingGenerator:
             True if all chunks have valid embeddings
         """
         for i, chunk in enumerate(chunks):
-            if 'embedding' not in chunk:
+            if "embedding" not in chunk:
                 logger.error(f"Chunk {i} missing embedding")
                 return False
 
-            if chunk['embedding'] is None:
+            if chunk["embedding"] is None:
                 logger.error(f"Chunk {i} has null embedding")
                 return False
 
-            if not isinstance(chunk['embedding'], list):
+            if not isinstance(chunk["embedding"], list):
                 logger.error(f"Chunk {i} has invalid embedding type")
                 return False
 

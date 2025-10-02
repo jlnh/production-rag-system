@@ -23,10 +23,7 @@ class RateLimiter:
     """
 
     def __init__(
-        self,
-        max_requests: int = 100,
-        window_seconds: int = 3600,
-        redis_url: Optional[str] = None
+        self, max_requests: int = 100, window_seconds: int = 3600, redis_url: Optional[str] = None
     ):
         """
         Initialize the rate limiter.
@@ -47,16 +44,17 @@ class RateLimiter:
         if self._redis_client is None:
             try:
                 import redis
+
                 self._redis_client = redis.from_url(
-                    self.redis_url,
-                    decode_responses=True,
-                    health_check_interval=30
+                    self.redis_url, decode_responses=True, health_check_interval=30
                 )
                 # Test connection
                 self._redis_client.ping()
                 logger.info("Connected to Redis for rate limiting")
             except ImportError:
-                raise ImportError("redis library is required for rate limiting. Install with: pip install redis")
+                raise ImportError(
+                    "redis library is required for rate limiting. Install with: pip install redis"
+                )
             except Exception as e:
                 logger.error(f"Failed to connect to Redis: {str(e)}")
                 raise
@@ -123,7 +121,9 @@ class RateLimiter:
         if current_count >= self.max_requests:
             # Remove the request we just added since it's rejected
             self.redis_client.zrem(key, str(now))
-            logger.warning(f"Rate limit exceeded for user {user_id}: {current_count}/{self.max_requests}")
+            logger.warning(
+                f"Rate limit exceeded for user {user_id}: {current_count}/{self.max_requests}"
+            )
             return False
 
         logger.debug(f"Request allowed for user {user_id}: {current_count + 1}/{self.max_requests}")
@@ -220,21 +220,18 @@ class RateLimiter:
             time_until_reset = self.get_time_until_reset(user_id)
 
             return {
-                'user_id': user_id,
-                'current_requests': current_count,
-                'max_requests': self.max_requests,
-                'window_seconds': self.window_seconds,
-                'time_until_reset': time_until_reset,
-                'requests_remaining': max(0, self.max_requests - current_count),
-                'percentage_used': min(100, (current_count / self.max_requests) * 100)
+                "user_id": user_id,
+                "current_requests": current_count,
+                "max_requests": self.max_requests,
+                "window_seconds": self.window_seconds,
+                "time_until_reset": time_until_reset,
+                "requests_remaining": max(0, self.max_requests - current_count),
+                "percentage_used": min(100, (current_count / self.max_requests) * 100),
             }
 
         except Exception as e:
             logger.error(f"Failed to get stats for user {user_id}: {str(e)}")
-            return {
-                'user_id': user_id,
-                'error': str(e)
-            }
+            return {"user_id": user_id, "error": str(e)}
 
     def update_limits(self, max_requests: int, window_seconds: int) -> None:
         """
@@ -271,20 +268,20 @@ class RateLimiter:
             response_time = time.time() - start_time
 
             return {
-                'healthy': True,
-                'redis_connected': True,
-                'response_time_ms': response_time * 1000,
-                'max_requests': self.max_requests,
-                'window_seconds': self.window_seconds
+                "healthy": True,
+                "redis_connected": True,
+                "response_time_ms": response_time * 1000,
+                "max_requests": self.max_requests,
+                "window_seconds": self.window_seconds,
             }
 
         except Exception as e:
             return {
-                'healthy': False,
-                'redis_connected': False,
-                'error': str(e),
-                'max_requests': self.max_requests,
-                'window_seconds': self.window_seconds
+                "healthy": False,
+                "redis_connected": False,
+                "error": str(e),
+                "max_requests": self.max_requests,
+                "window_seconds": self.window_seconds,
             }
 
     def get_global_stats(self) -> dict:
@@ -313,18 +310,18 @@ class RateLimiter:
             avg_requests_per_user = total_requests / sample_size if sample_size > 0 else 0
 
             return {
-                'total_active_users': total_users,
-                'sampled_users': sample_size,
-                'total_requests_sampled': total_requests,
-                'avg_requests_per_user': avg_requests_per_user,
-                'max_requests_limit': self.max_requests,
-                'window_seconds': self.window_seconds
+                "total_active_users": total_users,
+                "sampled_users": sample_size,
+                "total_requests_sampled": total_requests,
+                "avg_requests_per_user": avg_requests_per_user,
+                "max_requests_limit": self.max_requests,
+                "window_seconds": self.window_seconds,
             }
 
         except Exception as e:
             logger.error(f"Failed to get global rate limiting stats: {str(e)}")
             return {
-                'error': str(e),
-                'max_requests_limit': self.max_requests,
-                'window_seconds': self.window_seconds
+                "error": str(e),
+                "max_requests_limit": self.max_requests,
+                "window_seconds": self.window_seconds,
             }

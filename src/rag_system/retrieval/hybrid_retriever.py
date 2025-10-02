@@ -29,7 +29,7 @@ class HybridRetriever(BaseRetriever):
         documents: List[str] = None,
         vector_weight: float = 0.6,
         keyword_weight: float = 0.4,
-        rrf_k: int = 60
+        rrf_k: int = 60,
     ):
         """
         Initialize hybrid retriever.
@@ -71,9 +71,9 @@ class HybridRetriever(BaseRetriever):
         self.validate_query(query)
 
         # Get weight overrides if provided
-        vector_weight = kwargs.get('vector_weight_override', self.vector_weight)
-        keyword_weight = kwargs.get('keyword_weight_override', self.keyword_weight)
-        fusion_method = kwargs.get('fusion_method', 'rrf')
+        vector_weight = kwargs.get("vector_weight_override", self.vector_weight)
+        keyword_weight = kwargs.get("keyword_weight_override", self.keyword_weight)
+        fusion_method = kwargs.get("fusion_method", "rrf")
 
         try:
             # Retrieve more candidates for better fusion
@@ -81,13 +81,15 @@ class HybridRetriever(BaseRetriever):
 
             # Get results from both methods
             vector_results = self._vector_search(query, candidate_k)
-            keyword_results = self._keyword_search(query, candidate_k) if self.keyword_retriever else []
+            keyword_results = (
+                self._keyword_search(query, candidate_k) if self.keyword_retriever else []
+            )
 
             logger.info(f"Vector search returned {len(vector_results)} results")
             logger.info(f"Keyword search returned {len(keyword_results)} results")
 
             # Combine results using specified fusion method
-            if fusion_method == 'rrf':
+            if fusion_method == "rrf":
                 combined_results = self._reciprocal_rank_fusion(vector_results, keyword_results)
             else:
                 combined_results = self._weighted_fusion(
@@ -144,9 +146,7 @@ class HybridRetriever(BaseRetriever):
             return []
 
     def _reciprocal_rank_fusion(
-        self,
-        vector_results: List[Dict[str, Any]],
-        keyword_results: List[Dict[str, Any]]
+        self, vector_results: List[Dict[str, Any]], keyword_results: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """
         Combine results using Reciprocal Rank Fusion.
@@ -161,19 +161,19 @@ class HybridRetriever(BaseRetriever):
         Returns:
             Combined and ranked results
         """
-        combined_scores = {}
-        all_documents = {}
+        combined_scores: Dict[str, float] = {}
+        all_documents: Dict[str, Dict[str, Any]] = {}
 
         # Process vector results
         for rank, result in enumerate(vector_results):
-            doc_id = result['id']
+            doc_id = result["id"]
             rrf_score = 1 / (self.rrf_k + rank + 1)
             combined_scores[doc_id] = combined_scores.get(doc_id, 0) + rrf_score
             all_documents[doc_id] = result
 
         # Process keyword results
         for rank, result in enumerate(keyword_results):
-            doc_id = result['id']
+            doc_id = result["id"]
             rrf_score = 1 / (self.rrf_k + rank + 1)
             combined_scores[doc_id] = combined_scores.get(doc_id, 0) + rrf_score
 
@@ -189,8 +189,8 @@ class HybridRetriever(BaseRetriever):
         for doc_id, score in ranked_ids:
             if doc_id in all_documents:
                 result = all_documents[doc_id].copy()
-                result['score'] = score
-                result['fusion_method'] = 'rrf'
+                result["score"] = score
+                result["fusion_method"] = "rrf"
                 combined_results.append(result)
 
         return combined_results
@@ -200,7 +200,7 @@ class HybridRetriever(BaseRetriever):
         vector_results: List[Dict[str, Any]],
         keyword_results: List[Dict[str, Any]],
         vector_weight: float,
-        keyword_weight: float
+        keyword_weight: float,
     ) -> List[Dict[str, Any]]:
         """
         Combine results using weighted score fusion.
@@ -214,8 +214,8 @@ class HybridRetriever(BaseRetriever):
         Returns:
             Combined and ranked results
         """
-        combined_scores = {}
-        all_documents = {}
+        combined_scores: Dict[str, float] = {}
+        all_documents: Dict[str, Dict[str, Any]] = {}
 
         # Normalize scores for each method
         vector_scores = self._normalize_scores(vector_results)
@@ -223,14 +223,14 @@ class HybridRetriever(BaseRetriever):
 
         # Process vector results
         for result, normalized_score in zip(vector_results, vector_scores):
-            doc_id = result['id']
+            doc_id = result["id"]
             weighted_score = normalized_score * vector_weight
             combined_scores[doc_id] = combined_scores.get(doc_id, 0) + weighted_score
             all_documents[doc_id] = result
 
         # Process keyword results
         for result, normalized_score in zip(keyword_results, keyword_scores):
-            doc_id = result['id']
+            doc_id = result["id"]
             weighted_score = normalized_score * keyword_weight
             combined_scores[doc_id] = combined_scores.get(doc_id, 0) + weighted_score
 
@@ -245,8 +245,8 @@ class HybridRetriever(BaseRetriever):
         for doc_id, score in ranked_ids:
             if doc_id in all_documents:
                 result = all_documents[doc_id].copy()
-                result['score'] = score
-                result['fusion_method'] = 'weighted'
+                result["score"] = score
+                result["fusion_method"] = "weighted"
                 combined_results.append(result)
 
         return combined_results
@@ -264,7 +264,7 @@ class HybridRetriever(BaseRetriever):
         if not results:
             return []
 
-        scores = [result.get('score', 0.0) for result in results]
+        scores = [result.get("score", 0.0) for result in results]
 
         if len(set(scores)) == 1:  # All scores are the same
             return [1.0] * len(scores)
@@ -329,9 +329,9 @@ class HybridRetriever(BaseRetriever):
             Dictionary with retrieval statistics
         """
         return {
-            'vector_weight': self.vector_weight,
-            'keyword_weight': self.keyword_weight,
-            'rrf_k': self.rrf_k,
-            'has_keyword_retriever': self.keyword_retriever is not None,
-            'method': 'hybrid'
+            "vector_weight": self.vector_weight,
+            "keyword_weight": self.keyword_weight,
+            "rrf_k": self.rrf_k,
+            "has_keyword_retriever": self.keyword_retriever is not None,
+            "method": "hybrid",
         }

@@ -5,7 +5,7 @@ uvicorn>=0.24.0
 pydantic>=2.4.0
 
 # Vector Stores
-pinecone-client>=2.2.4
+pinecone>=5.0.0
 weaviate-client>=3.25.0
 chromadb>=0.4.15
 

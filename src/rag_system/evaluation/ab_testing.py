@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class ABTestStatus(Enum):
     """Status of an A/B test."""
+
     DRAFT = "draft"
     RUNNING = "running"
     PAUSED = "paused"
@@ -32,6 +33,7 @@ class ABTestStatus(Enum):
 @dataclass
 class ABTestConfig:
     """Configuration for an A/B test."""
+
     test_id: str
     name: str
     description: str
@@ -46,16 +48,17 @@ class ABTestConfig:
 @dataclass
 class UserInteraction:
     """Record of a user interaction with the system."""
+
     user_id: str
     query: str
     variant: str  # 'A' or 'B'
     satisfaction_score: Optional[float] = None  # 1-5 scale
     click_through: bool = False
-    timestamp: datetime = None
+    timestamp: Optional[datetime] = None
     response_time: float = 0.0
     num_results: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = datetime.now()
 
@@ -92,7 +95,7 @@ class ABTestFramework:
         description: str,
         traffic_split: float = 0.5,
         duration_days: int = 7,
-        min_sample_size: int = 100
+        min_sample_size: int = 100,
     ) -> ABTestConfig:
         """
         Create a new A/B test configuration.
@@ -129,7 +132,7 @@ class ABTestFramework:
             traffic_split=traffic_split,
             start_date=None,  # Set when test starts
             end_date=end_date,
-            min_sample_size=min_sample_size
+            min_sample_size=min_sample_size,
         )
 
         self.test_configs[test_id] = config
@@ -184,7 +187,7 @@ class ABTestFramework:
         config = self.test_configs[test_id]
 
         if config.status != ABTestStatus.RUNNING:
-            return 'A'  # Default to control group for non-running tests
+            return "A"  # Default to control group for non-running tests
 
         # Use consistent hashing for assignment
         assignment_key = f"{test_id}:{user_id}"
@@ -194,7 +197,7 @@ class ABTestFramework:
             hash_value = int(hashlib.md5(assignment_key.encode()).hexdigest(), 16)
             assignment_ratio = (hash_value % 10000) / 10000.0
 
-            variant = 'B' if assignment_ratio < config.traffic_split else 'A'
+            variant = "B" if assignment_ratio < config.traffic_split else "A"
             self.user_assignments[assignment_key] = variant
 
         return self.user_assignments[assignment_key]
@@ -207,7 +210,7 @@ class ABTestFramework:
         satisfaction_score: Optional[float] = None,
         click_through: bool = False,
         response_time: float = 0.0,
-        num_results: int = 0
+        num_results: int = 0,
     ) -> None:
         """
         Record a user interaction with the system.
@@ -234,7 +237,7 @@ class ABTestFramework:
             satisfaction_score=satisfaction_score,
             click_through=click_through,
             response_time=response_time,
-            num_results=num_results
+            num_results=num_results,
         )
 
         self.interactions.append(interaction)
@@ -274,13 +277,14 @@ class ABTestFramework:
 
         # Filter interactions for this test
         test_interactions = [
-            interaction for interaction in self.interactions
+            interaction
+            for interaction in self.interactions
             if self.get_variant(interaction.user_id, test_id) == interaction.variant
         ]
 
         # Split by variant
-        variant_a_interactions = [i for i in test_interactions if i.variant == 'A']
-        variant_b_interactions = [i for i in test_interactions if i.variant == 'B']
+        variant_a_interactions = [i for i in test_interactions if i.variant == "A"]
+        variant_b_interactions = [i for i in test_interactions if i.variant == "B"]
 
         # Calculate metrics for each variant
         variant_a_metrics = self._calculate_variant_metrics(variant_a_interactions)
@@ -292,37 +296,37 @@ class ABTestFramework:
         )
 
         results = {
-            'test_config': asdict(config),
-            'variant_a': {
-                'name': 'Control (A)',
-                'interactions': len(variant_a_interactions),
-                'metrics': variant_a_metrics
+            "test_config": asdict(config),
+            "variant_a": {
+                "name": "Control (A)",
+                "interactions": len(variant_a_interactions),
+                "metrics": variant_a_metrics,
             },
-            'variant_b': {
-                'name': 'Treatment (B)',
-                'interactions': len(variant_b_interactions),
-                'metrics': variant_b_metrics
+            "variant_b": {
+                "name": "Treatment (B)",
+                "interactions": len(variant_b_interactions),
+                "metrics": variant_b_metrics,
             },
-            'comparison': {
-                'satisfaction_improvement': self._calculate_improvement(
-                    variant_a_metrics.get('avg_satisfaction', 0),
-                    variant_b_metrics.get('avg_satisfaction', 0)
+            "comparison": {
+                "satisfaction_improvement": self._calculate_improvement(
+                    variant_a_metrics.get("avg_satisfaction", 0),
+                    variant_b_metrics.get("avg_satisfaction", 0),
                 ),
-                'ctr_improvement': self._calculate_improvement(
-                    variant_a_metrics.get('click_through_rate', 0),
-                    variant_b_metrics.get('click_through_rate', 0)
+                "ctr_improvement": self._calculate_improvement(
+                    variant_a_metrics.get("click_through_rate", 0),
+                    variant_b_metrics.get("click_through_rate", 0),
                 ),
-                'response_time_improvement': self._calculate_improvement(
-                    variant_a_metrics.get('avg_response_time', 0),
-                    variant_b_metrics.get('avg_response_time', 0),
-                    lower_is_better=True
+                "response_time_improvement": self._calculate_improvement(
+                    variant_a_metrics.get("avg_response_time", 0),
+                    variant_b_metrics.get("avg_response_time", 0),
+                    lower_is_better=True,
                 ),
-                'statistical_significance': significance_results
+                "statistical_significance": significance_results,
             },
-            'recommendation': self._get_recommendation(
+            "recommendation": self._get_recommendation(
                 variant_a_metrics, variant_b_metrics, significance_results, config
             ),
-            'generated_at': datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
         }
 
         # Cache results
@@ -336,7 +340,9 @@ class ABTestFramework:
             return {}
 
         # Satisfaction metrics
-        satisfaction_scores = [i.satisfaction_score for i in interactions if i.satisfaction_score is not None]
+        satisfaction_scores = [
+            i.satisfaction_score for i in interactions if i.satisfaction_score is not None
+        ]
         avg_satisfaction = statistics.mean(satisfaction_scores) if satisfaction_scores else 0.0
 
         # Click-through rate
@@ -352,23 +358,20 @@ class ABTestFramework:
         avg_results = statistics.mean(result_counts) if result_counts else 0.0
 
         return {
-            'avg_satisfaction': avg_satisfaction,
-            'satisfaction_count': len(satisfaction_scores),
-            'click_through_rate': ctr,
-            'avg_response_time': avg_response_time,
-            'avg_results_returned': avg_results,
-            'total_interactions': len(interactions)
+            "avg_satisfaction": avg_satisfaction,
+            "satisfaction_count": len(satisfaction_scores),
+            "click_through_rate": ctr,
+            "avg_response_time": avg_response_time,
+            "avg_results_returned": avg_results,
+            "total_interactions": len(interactions),
         }
 
     def _calculate_improvement(
-        self,
-        baseline: float,
-        treatment: float,
-        lower_is_better: bool = False
+        self, baseline: float, treatment: float, lower_is_better: bool = False
     ) -> Dict[str, float]:
         """Calculate improvement metrics between variants."""
         if baseline == 0:
-            return {'absolute': treatment, 'relative_percent': 0.0}
+            return {"absolute": treatment, "relative_percent": 0.0}
 
         absolute_diff = treatment - baseline
         relative_percent = (absolute_diff / baseline) * 100
@@ -378,15 +381,13 @@ class ABTestFramework:
             relative_percent = -relative_percent
 
         return {
-            'absolute': absolute_diff,
-            'relative_percent': relative_percent,
-            'is_improvement': relative_percent > 0
+            "absolute": absolute_diff,
+            "relative_percent": relative_percent,
+            "is_improvement": relative_percent > 0,
         }
 
     def _calculate_significance(
-        self,
-        variant_a: List[UserInteraction],
-        variant_b: List[UserInteraction]
+        self, variant_a: List[UserInteraction], variant_b: List[UserInteraction]
     ) -> Dict[str, Any]:
         """Calculate statistical significance using t-test for satisfaction scores."""
         # Get satisfaction scores for both variants
@@ -395,9 +396,9 @@ class ABTestFramework:
 
         if len(scores_a) < 10 or len(scores_b) < 10:
             return {
-                'is_significant': False,
-                'p_value': None,
-                'reason': 'Insufficient sample size for significance testing'
+                "is_significant": False,
+                "p_value": None,
+                "reason": "Insufficient sample size for significance testing",
             }
 
         try:
@@ -409,11 +410,11 @@ class ABTestFramework:
             is_significant = p_value < 0.05
 
             return {
-                'is_significant': is_significant,
-                'p_value': p_value,
-                't_statistic': t_stat,
-                'method': 'Welch t-test',
-                'alpha': 0.05
+                "is_significant": is_significant,
+                "p_value": p_value,
+                "t_statistic": t_stat,
+                "method": "Welch t-test",
+                "alpha": 0.05,
             }
 
         except ImportError:
@@ -426,10 +427,10 @@ class ABTestFramework:
             effect_size = abs(mean_b - mean_a) / pooled_std if pooled_std > 0 else 0
 
             return {
-                'is_significant': effect_size > 0.5,  # Simple heuristic
-                'p_value': None,
-                'effect_size': effect_size,
-                'method': 'Effect size heuristic (scipy not available)'
+                "is_significant": effect_size > 0.5,  # Simple heuristic
+                "p_value": None,
+                "effect_size": effect_size,
+                "method": "Effect size heuristic (scipy not available)",
             }
 
     def _get_recommendation(
@@ -437,54 +438,57 @@ class ABTestFramework:
         variant_a_metrics: Dict[str, float],
         variant_b_metrics: Dict[str, float],
         significance: Dict[str, Any],
-        config: ABTestConfig
+        config: ABTestConfig,
     ) -> Dict[str, Any]:
         """Generate recommendation based on test results."""
 
         # Check if we have enough data
-        total_interactions_a = variant_a_metrics.get('total_interactions', 0)
-        total_interactions_b = variant_b_metrics.get('total_interactions', 0)
+        total_interactions_a = variant_a_metrics.get("total_interactions", 0)
+        total_interactions_b = variant_b_metrics.get("total_interactions", 0)
 
-        if total_interactions_a < config.min_sample_size or total_interactions_b < config.min_sample_size:
+        if (
+            total_interactions_a < config.min_sample_size
+            or total_interactions_b < config.min_sample_size
+        ):
             return {
-                'decision': 'continue_test',
-                'reason': 'Insufficient sample size',
-                'confidence': 'low'
+                "decision": "continue_test",
+                "reason": "Insufficient sample size",
+                "confidence": "low",
             }
 
         # Check statistical significance
-        if not significance.get('is_significant', False):
+        if not significance.get("is_significant", False):
             return {
-                'decision': 'no_clear_winner',
-                'reason': 'No statistically significant difference found',
-                'confidence': 'medium'
+                "decision": "no_clear_winner",
+                "reason": "No statistically significant difference found",
+                "confidence": "medium",
             }
 
         # Compare key metrics
-        satisfaction_a = variant_a_metrics.get('avg_satisfaction', 0)
-        satisfaction_b = variant_b_metrics.get('avg_satisfaction', 0)
+        satisfaction_a = variant_a_metrics.get("avg_satisfaction", 0)
+        satisfaction_b = variant_b_metrics.get("avg_satisfaction", 0)
 
-        ctr_a = variant_a_metrics.get('click_through_rate', 0)
-        ctr_b = variant_b_metrics.get('click_through_rate', 0)
+        ctr_a = variant_a_metrics.get("click_through_rate", 0)
+        ctr_b = variant_b_metrics.get("click_through_rate", 0)
 
         # Make recommendation based on overall performance
         if satisfaction_b > satisfaction_a and ctr_b >= ctr_a:
             return {
-                'decision': 'implement_variant_b',
-                'reason': 'Variant B shows significant improvement in satisfaction',
-                'confidence': 'high'
+                "decision": "implement_variant_b",
+                "reason": "Variant B shows significant improvement in satisfaction",
+                "confidence": "high",
             }
         elif satisfaction_a > satisfaction_b and ctr_a >= ctr_b:
             return {
-                'decision': 'keep_variant_a',
-                'reason': 'Variant A performs better overall',
-                'confidence': 'high'
+                "decision": "keep_variant_a",
+                "reason": "Variant A performs better overall",
+                "confidence": "high",
             }
         else:
             return {
-                'decision': 'mixed_results',
-                'reason': 'Results are mixed - further analysis needed',
-                'confidence': 'low'
+                "decision": "mixed_results",
+                "reason": "Results are mixed - further analysis needed",
+                "confidence": "low",
             }
 
     def _save_data(self) -> None:
@@ -494,15 +498,15 @@ class ABTestFramework:
 
         try:
             data = {
-                'user_assignments': self.user_assignments,
-                'test_configs': {
+                "user_assignments": self.user_assignments,
+                "test_configs": {
                     test_id: asdict(config) for test_id, config in self.test_configs.items()
                 },
-                'interactions': [asdict(interaction) for interaction in self.interactions],
-                'saved_at': datetime.now().isoformat()
+                "interactions": [asdict(interaction) for interaction in self.interactions],
+                "saved_at": datetime.now().isoformat(),
             }
 
-            with open(self.storage_path, 'w', encoding='utf-8') as f:
+            with open(self.storage_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, default=str)
 
         except Exception as e:
@@ -510,29 +514,35 @@ class ABTestFramework:
 
     def _load_data(self) -> None:
         """Load test data from storage."""
+        if not self.storage_path:
+            return
         try:
-            with open(self.storage_path, 'r', encoding='utf-8') as f:
+            with open(self.storage_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            self.user_assignments = data.get('user_assignments', {})
+            self.user_assignments = data.get("user_assignments", {})
 
             # Load test configs
-            for test_id, config_data in data.get('test_configs', {}).items():
+            for test_id, config_data in data.get("test_configs", {}).items():
                 # Convert datetime strings back to datetime objects
-                if config_data.get('start_date'):
-                    config_data['start_date'] = datetime.fromisoformat(config_data['start_date'])
-                if config_data.get('end_date'):
-                    config_data['end_date'] = datetime.fromisoformat(config_data['end_date'])
+                if config_data.get("start_date"):
+                    config_data["start_date"] = datetime.fromisoformat(config_data["start_date"])
+                if config_data.get("end_date"):
+                    config_data["end_date"] = datetime.fromisoformat(config_data["end_date"])
 
-                config_data['status'] = ABTestStatus(config_data['status'])
+                config_data["status"] = ABTestStatus(config_data["status"])
                 self.test_configs[test_id] = ABTestConfig(**config_data)
 
             # Load interactions
-            for interaction_data in data.get('interactions', []):
-                interaction_data['timestamp'] = datetime.fromisoformat(interaction_data['timestamp'])
+            for interaction_data in data.get("interactions", []):
+                interaction_data["timestamp"] = datetime.fromisoformat(
+                    interaction_data["timestamp"]
+                )
                 self.interactions.append(UserInteraction(**interaction_data))
 
-            logger.info(f"Loaded A/B test data: {len(self.test_configs)} tests, {len(self.interactions)} interactions")
+            logger.info(
+                f"Loaded A/B test data: {len(self.test_configs)} tests, {len(self.interactions)} interactions"
+            )
 
         except FileNotFoundError:
             logger.info("No existing A/B test data found")
