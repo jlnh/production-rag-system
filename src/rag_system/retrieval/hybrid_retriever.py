@@ -161,8 +161,8 @@ class HybridRetriever(BaseRetriever):
         Returns:
             Combined and ranked results
         """
-        combined_scores = {}
-        all_documents = {}
+        combined_scores: Dict[str, float] = {}
+        all_documents: Dict[str, Dict[str, Any]] = {}
 
         # Process vector results
         for rank, result in enumerate(vector_results):
@@ -214,8 +214,8 @@ class HybridRetriever(BaseRetriever):
         Returns:
             Combined and ranked results
         """
-        combined_scores = {}
-        all_documents = {}
+        combined_scores: Dict[str, float] = {}
+        all_documents: Dict[str, Dict[str, Any]] = {}
 
         # Normalize scores for each method
         vector_scores = self._normalize_scores(vector_results)

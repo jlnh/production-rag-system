@@ -7,7 +7,7 @@ Module 2: Advanced Retrieval Techniques
 License: MIT
 """
 
-from typing import List, Dict, Any, Optional, Set, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple, Collection
 import logging
 import json
 import time
@@ -33,7 +33,7 @@ class RetrievalEvaluator:
             test_queries_path: Path to test queries file (JSON format)
         """
         self.test_queries_path = test_queries_path
-        self._test_queries = None
+        self._test_queries: Optional[Dict[str, List[str]]] = None
 
     @property
     def test_queries(self) -> Dict[str, List[str]]:
@@ -345,10 +345,11 @@ class RetrievalEvaluator:
                 }
 
         # Overall winner
-        precision_5_improvement = (
-            comparison["improvements"].get("avg_precision@5", {}).get("relative_percent", 0)
-        )
-        mrr_improvement = comparison["improvements"].get("avg_mrr", {}).get("relative_percent", 0)
+        precision_5_dict = comparison["improvements"].get("avg_precision@5", {})
+        mrr_dict = comparison["improvements"].get("avg_mrr", {})
+
+        precision_5_improvement: float = precision_5_dict.get("relative_percent", 0) if isinstance(precision_5_dict, dict) else 0  # type: ignore
+        mrr_improvement: float = mrr_dict.get("relative_percent", 0) if isinstance(mrr_dict, dict) else 0  # type: ignore
 
         overall_improvement = (precision_5_improvement + mrr_improvement) / 2
         comparison["overall_winner"] = system_b_name if overall_improvement > 0 else system_a_name

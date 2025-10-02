@@ -54,11 +54,11 @@ class UserInteraction:
     variant: str  # 'A' or 'B'
     satisfaction_score: Optional[float] = None  # 1-5 scale
     click_through: bool = False
-    timestamp: datetime = None
+    timestamp: Optional[datetime] = None
     response_time: float = 0.0
     num_results: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = datetime.now()
 
@@ -514,6 +514,8 @@ class ABTestFramework:
 
     def _load_data(self) -> None:
         """Load test data from storage."""
+        if not self.storage_path:
+            return
         try:
             with open(self.storage_path, "r", encoding="utf-8") as f:
                 data = json.load(f)

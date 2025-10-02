@@ -162,7 +162,7 @@ class ConfigManager:
             config_path: Path to configuration file (optional)
         """
         self.config_path = config_path
-        self._config = None
+        self._config: Optional[RAGConfig] = None
 
     def load_config(self) -> RAGConfig:
         """
@@ -364,7 +364,7 @@ class ConfigManager:
 
     def reload_config(self) -> RAGConfig:
         """Reload configuration from sources."""
-        self._config = None
+        self._config: Optional[RAGConfig] = None
         return self.load_config()
 
     def to_dict(self) -> Dict[str, Any]:
