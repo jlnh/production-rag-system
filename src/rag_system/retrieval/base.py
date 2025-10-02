@@ -22,7 +22,7 @@ class BaseRetriever(ABC):
     """
 
     @abstractmethod
-    def retrieve(self, query: str, top_k: int = 5, **kwargs) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 5, **kwargs: Any) -> List[Dict[str, Any]]:
         """
         Retrieve relevant documents for a given query.
 
@@ -107,7 +107,7 @@ class VectorRetriever(BaseRetriever):
     Vector-based retrieval using semantic embeddings.
     """
 
-    def __init__(self, vector_store, embedding_generator):
+    def __init__(self, vector_store: Any, embedding_generator: Any) -> None:
         """
         Initialize vector retriever.
 
@@ -119,7 +119,7 @@ class VectorRetriever(BaseRetriever):
         self.embedding_generator = embedding_generator
         self.method_name = "vector"
 
-    def retrieve(self, query: str, top_k: int = 5, **kwargs) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 5, **kwargs: Any) -> List[Dict[str, Any]]:
         """
         Retrieve documents using vector similarity search.
 
@@ -164,7 +164,7 @@ class KeywordRetriever(BaseRetriever):
     Keyword-based retrieval using BM25 or similar algorithms.
     """
 
-    def __init__(self, documents: List[str] = None):
+    def __init__(self, documents: Optional[List[str]] = None):
         """
         Initialize keyword retriever.
 
@@ -173,13 +173,13 @@ class KeywordRetriever(BaseRetriever):
         """
         self.method_name = "keyword"
         self._documents = documents or []
-        self._bm25_index = None
-        self._document_map = {}
+        self._bm25_index: Any = None
+        self._document_map: Dict[int, str] = {}
 
         if documents:
             self._build_index()
 
-    def _build_index(self):
+    def _build_index(self) -> None:
         """Build BM25 index from documents."""
         try:
             from rank_bm25 import BM25Okapi
@@ -197,7 +197,7 @@ class KeywordRetriever(BaseRetriever):
                 "rank_bm25 is required for keyword retrieval. Install with: pip install rank_bm25"
             )
 
-    def retrieve(self, query: str, top_k: int = 5, **kwargs) -> List[Dict[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 5, **kwargs: Any) -> List[Dict[str, Any]]:
         """
         Retrieve documents using BM25 keyword matching.
 

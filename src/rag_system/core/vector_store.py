@@ -55,7 +55,7 @@ class VectorStore(VectorStoreBase):
     Supports multiple backends including Pinecone, Weaviate, and ChromaDB.
     """
 
-    def __init__(self, backend: str = "pinecone", **kwargs):
+    def __init__(self, backend: str = "pinecone", **kwargs: Any) -> None:
         """
         Initialize the vector store.
 
@@ -65,24 +65,24 @@ class VectorStore(VectorStoreBase):
         """
         self.backend = backend
         self.config = kwargs
-        self._client = None
-        self._index = None
+        self._client: Any = None
+        self._index: Any = None
 
     @property
-    def client(self):
+    def client(self) -> Any:
         """Lazy initialization of vector store client."""
         if self._client is None:
             self._client = self._create_client()
         return self._client
 
     @property
-    def index(self):
+    def index(self) -> Any:
         """Get or create the vector index."""
         if self._index is None:
             self._index = self._get_or_create_index()
         return self._index
 
-    def _create_client(self):
+    def _create_client(self) -> Any:
         """Create the appropriate vector store client."""
         if self.backend == "pinecone":
             return self._create_pinecone_client()
@@ -93,7 +93,7 @@ class VectorStore(VectorStoreBase):
         else:
             raise ValueError(f"Unsupported backend: {self.backend}")
 
-    def _create_pinecone_client(self):
+    def _create_pinecone_client(self) -> Any:
         """Create Pinecone client."""
         try:
             from pinecone import Pinecone
@@ -104,7 +104,7 @@ class VectorStore(VectorStoreBase):
         except ImportError:
             raise ImportError("Pinecone library required. Install with: pip install pinecone")
 
-    def _create_weaviate_client(self):
+    def _create_weaviate_client(self) -> Any:
         """Create Weaviate client."""
         try:
             import weaviate
@@ -119,7 +119,7 @@ class VectorStore(VectorStoreBase):
                 "Weaviate library required. Install with: pip install weaviate-client"
             )
 
-    def _create_chroma_client(self):
+    def _create_chroma_client(self) -> Any:
         """Create ChromaDB client."""
         try:
             import chromadb
@@ -129,7 +129,7 @@ class VectorStore(VectorStoreBase):
         except ImportError:
             raise ImportError("ChromaDB library required. Install with: pip install chromadb")
 
-    def _get_or_create_index(self):
+    def _get_or_create_index(self) -> Any:
         """Get or create the vector index."""
         index_name = self.config.get("index_name", "rag-documents")
 
@@ -139,8 +139,9 @@ class VectorStore(VectorStoreBase):
             return self._get_weaviate_collection(index_name)
         elif self.backend == "chroma":
             return self._get_chroma_collection(index_name)
+        return None
 
-    def _get_pinecone_index(self, index_name: str):
+    def _get_pinecone_index(self, index_name: str) -> Any:
         """Get or create Pinecone index."""
         from pinecone import ServerlessSpec
 
@@ -160,12 +161,12 @@ class VectorStore(VectorStoreBase):
 
         return self.client.Index(index_name)
 
-    def _get_weaviate_collection(self, collection_name: str):
+    def _get_weaviate_collection(self, collection_name: str) -> Any:
         """Get or create Weaviate collection."""
         # Implementation would depend on specific Weaviate setup
         return collection_name
 
-    def _get_chroma_collection(self, collection_name: str):
+    def _get_chroma_collection(self, collection_name: str) -> Any:
         """Get or create ChromaDB collection."""
         return self.client.get_or_create_collection(name=collection_name)
 

@@ -166,7 +166,7 @@ def extract_keywords(text: str, max_keywords: int = 10) -> List[str]:
     words = [word for word in words if word not in stop_words]
 
     # Count word frequencies
-    word_counts = {}
+    word_counts: Dict[str, int] = {}
     for word in words:
         word_counts[word] = word_counts.get(word, 0) + 1
 
@@ -242,12 +242,13 @@ def format_file_size(size_bytes: int) -> str:
 
     size_names = ["B", "KB", "MB", "GB", "TB"]
     size_index = 0
+    size_value: float = float(size_bytes)
 
-    while size_bytes >= 1024 and size_index < len(size_names) - 1:
-        size_bytes /= 1024.0
+    while size_value >= 1024 and size_index < len(size_names) - 1:
+        size_value /= 1024.0
         size_index += 1
 
-    return f"{size_bytes:.1f} {size_names[size_index]}"
+    return f"{size_value:.1f} {size_names[size_index]}"
 
 
 def format_duration(seconds: float) -> str:
@@ -275,13 +276,13 @@ def format_duration(seconds: float) -> str:
 
 
 def retry_with_backoff(
-    func,
+    func: Any,
     max_retries: int = 3,
     base_delay: float = 1.0,
     max_delay: float = 60.0,
     backoff_factor: float = 2.0,
-    exceptions: Tuple = (Exception,),
-):
+    exceptions: Tuple[type[Exception], ...] = (Exception,),
+) -> Any:
     """
     Retry function with exponential backoff.
 
@@ -453,7 +454,8 @@ def calculate_cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
     if magnitude1 == 0.0 or magnitude2 == 0.0:
         return 0.0
 
-    return dot_product / (magnitude1 * magnitude2)
+    similarity: float = dot_product / (magnitude1 * magnitude2)
+    return similarity
 
 
 def get_system_info() -> Dict[str, Any]:
@@ -503,15 +505,15 @@ class Timer:
             name: Timer name for logging
         """
         self.name = name
-        self.start_time = None
-        self.end_time = None
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "Timer":
         """Start the timer."""
         self.start_time = time.time()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Stop the timer and log duration."""
         self.end_time = time.time()
         duration = self.elapsed_time
