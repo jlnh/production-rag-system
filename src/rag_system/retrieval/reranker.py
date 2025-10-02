@@ -279,7 +279,7 @@ class ReRanker:
 
     def benchmark_model(
         self, test_queries: List[str], test_documents: List[Dict[str, Any]]
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """
         Benchmark the re-ranking model performance.
 
