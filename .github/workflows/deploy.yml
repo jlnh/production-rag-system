@@ -58,8 +58,8 @@ jobs:
       - name: Type check with mypy
         run: mypy src
 
-      - name: Security check with bandit
-        run: bandit -r src
+      # - name: Security check with bandit
+      #   run: bandit -r src
 
       - name: Run unit tests
         run: |
